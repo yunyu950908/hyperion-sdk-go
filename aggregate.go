@@ -59,6 +59,11 @@ type AggregateSwapRouteTaken struct {
 	PoolType       string        `json:"poolType"`
 	AmountIn       string        `json:"amountIn"`
 	AmountOut      string        `json:"amountOut"`
+	FirstType      string        `json:"firstType,omitempty"`
+	SecondType     string        `json:"secondType,omitempty"`
+	IsSell         bool          `json:"isSell,omitempty"`
+	Integrator     string        `json:"integrator,omitempty"`
+	IntegratorFee  int           `json:"integratorFee,omitempty"`
 }
 
 // TokenTypeInfo describes a token type returned inside route hops.

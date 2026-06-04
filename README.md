@@ -22,7 +22,9 @@ Implemented so far:
 - Pool REST reads.
 - Position and reward REST reads with upstream zero-amount filtering behavior.
 - Swap quote REST methods.
-- Aggregate swap route fetch with the upstream mainnet-only guard.
+- Aggregate swap route fetch with the upstream mainnet-only guard and a
+  recorder-backed aggregate composer strategy for deterministic batched-call
+  plans.
 - Entry-function payload builders for common pool, position, reward, and swap
   workflows, including basic swap coin-type to fungible-asset metadata
   conversion.
@@ -34,7 +36,7 @@ Implemented so far:
 Still tracked:
 
 - Aptos view-call integration.
-- Aggregate swap transaction script composition.
+- Live transaction integration for aggregate composer adapters.
 - Strong response structs for REST endpoints if stable API schemas become
   available.
 
@@ -89,6 +91,32 @@ quote, err := sdk.Swap.EstFromAmount(context.Background(), hyperion.EstimateAmou
 	From:     "0x...",
 	To:       "0x...",
 	SafeMode: true,
+})
+```
+
+## Aggregate Swap Composer
+
+Aggregate swap route fetching is available through `EstAmountByAggregateSwap`.
+`GenerateAggregateSwapTransactionScript` accepts an `AggregateSwapComposer`
+interface; the built-in recorder mirrors the upstream TypeScript SDK's
+batched-call order without serializing a submit-ready Aptos transaction.
+
+```go
+route, err := sdk.Swap.EstAmountByAggregateSwap(ctx, hyperion.AggregateSwapRouteArgs{
+	Amount:   "1000000",
+	From:     "0x...",
+	Input:    "0x...",
+	Slippage: "0.5",
+	To:       "0x...",
+})
+if err != nil {
+	return err
+}
+
+recorder := hyperion.NewAggregateSwapRecorder()
+err = sdk.Swap.GenerateAggregateSwapTransactionScript(hyperion.GenerateAggregateSwapTransactionScriptArgs{
+	Route:    *route,
+	Composer: recorder,
 })
 ```
 
