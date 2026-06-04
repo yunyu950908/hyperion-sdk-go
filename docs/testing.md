@@ -16,13 +16,13 @@ go vet ./...
 | --- | --- | --- |
 | SDK initialization | Mainnet/testnet defaults, API key propagation, service handles, required option validation | `client_test.go` |
 | Request layer | URL normalization, query encoding, JSON decoding, non-2xx errors | `request_test.go` |
-| Utilities | Tick complement, slippage bounds, slippage calculation, currency checks | `utils_test.go` |
+| Utilities | Tick complement, slippage bounds, slippage calculation, currency checks, round tick, price-to-tick, tick-to-price | `utils_test.go` |
 | Pool REST reads | Pools list, pool by ID, pool by token pair and fee tier, ticks | `modules_test.go` |
 | Position REST reads | Positions by owner, ownership by position ID, non-zero fee history filtering | `modules_test.go` |
 | Reward REST reads | Non-zero reward history filtering | `modules_test.go` |
 | Swap quotes | `flag=out`, `flag=in`, safe mode query behavior | `modules_test.go` |
 | Aggregate route fetch | Mainnet-only guard and route response decoding | `aggregate_test.go` |
-| Payload builders | Pool, liquidity, swap, reward, and claim argument order | `payload_test.go` |
+| Payload builders | Pool, liquidity, pool estimate view payloads, swap, reward, and claim argument order | `payload_test.go`, `pool_payload_test.go` |
 | Parity fixtures | Golden snapshots for representative payloads and REST responses | `parity_test.go`, `testdata/parity` |
 
 ## Golden Fixtures
@@ -39,8 +39,7 @@ ordering.
 
 | Gap | Tracking issue |
 | --- | --- |
-| Full Pool price/tick helper parity | #4 |
-| Aptos view-call integration | #4, #5 |
+| Aptos view-call integration | #13 |
 | Swap coin type to fungible asset metadata conversion | #6 |
 | Aggregate swap transaction script composition | #7 |
 | Strong REST response structs if schemas stabilize | #8 |
