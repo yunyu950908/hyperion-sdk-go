@@ -1,6 +1,10 @@
 package hyperion
 
-import "testing"
+import (
+	"math"
+	"testing"
+	"time"
+)
 
 func TestTickComplementMatchesUnsignedInt32(t *testing.T) {
 	t.Parallel()
@@ -34,6 +38,28 @@ func TestSlippageCalculatorRoundsToWholeUnits(t *testing.T) {
 	}
 	if got != "99500" {
 		t.Fatalf("slippage result = %q, want 99500", got)
+	}
+}
+
+func TestPoolDeadlineIsRoughlyOneHundredYearsAhead(t *testing.T) {
+	t.Parallel()
+
+	before := time.Now().Unix()
+	deadline := PoolDeadline()
+	after := time.Now().Unix()
+	min := before + int64(100*365*24*60*60)
+	max := after + int64(100*365*24*60*60)
+	if deadline < min || deadline > max {
+		t.Fatalf("PoolDeadline() = %d, want between %d and %d", deadline, min, max)
+	}
+}
+
+func TestLogBaseUsesHyperionTickBase(t *testing.T) {
+	t.Parallel()
+
+	got := LogBase(Base * Base)
+	if math.Abs(got-2) > 1e-9 {
+		t.Fatalf("LogBase(Base^2) = %v, want 2", got)
 	}
 }
 
@@ -176,5 +202,19 @@ func TestU64MaxMatchesTypeScriptSDKConstant(t *testing.T) {
 
 	if U64Max != "184467440737095516" {
 		t.Fatalf("U64Max = %q", U64Max)
+	}
+}
+
+func TestFeeTierTablesMatchExportedFeeTierIndexes(t *testing.T) {
+	t.Parallel()
+
+	if FeeTierItems[FeeTier001Spacing1] != "1" || FeeTierStep[FeeTier001Spacing1] != 1 {
+		t.Fatalf("fee tier 0.01 table mismatch")
+	}
+	if FeeTierItems[FeeTier03Spacing60] != "30" || FeeTierStep[FeeTier03Spacing60] != 60 {
+		t.Fatalf("fee tier 0.3 table mismatch")
+	}
+	if LowestTickByStep[FeeTier025Spacing50] != -443600 || HighestTickByStep[FeeTier025Spacing50] != 443600 {
+		t.Fatalf("fee tier 0.25 tick bounds mismatch")
 	}
 }
