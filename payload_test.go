@@ -2,6 +2,13 @@ package hyperion
 
 import "testing"
 
+const (
+	aptosCoinType     = "0x1::aptos_coin::AptosCoin"
+	exampleCoinType   = "0x6926bff1eab5554fa72ae167ed736acf623ab17fe81ebf2ea0d2138f8c533f77::type::T"
+	exampleCoinFAType = "0xc5bcdea4d8a9f5809c5c945a3ff5698a347afb982c7389a335100e1b0043d115"
+	longAptosCoinType = "0x0000000000000000000000000000000000000000000000000000000000000001::aptos_coin::AptosCoin"
+)
+
 func TestRewardPayloadBuilders(t *testing.T) {
 	t.Parallel()
 
@@ -87,22 +94,102 @@ func TestSwapPayloadBuilders(t *testing.T) {
 	assertArguments(t, partnership.FunctionArguments, []any{[]string{"pool-1"}, "0x1", "0x2", "1000", "995", "partner-1"})
 }
 
-func TestSwapPayloadRejectsCoinTypesUntilFAConversionIsImplemented(t *testing.T) {
+func TestSwapPayloadConvertsCoinTypesToFungibleAssetMetadata(t *testing.T) {
 	t.Parallel()
 
 	sdk := newMainnetClientForPayloads(t)
-	_, err := sdk.Swap.SwapTransactionPayload(SwapTransactionPayloadArgs{
-		CurrencyA:       "0x1::aptos_coin::AptosCoin",
-		CurrencyB:       "0x2",
+	payload, err := sdk.Swap.SwapTransactionPayload(SwapTransactionPayloadArgs{
+		CurrencyA:       aptosCoinType,
+		CurrencyB:       exampleCoinType,
 		CurrencyAAmount: "1000",
 		CurrencyBAmount: "1000",
 		Slippage:        "0.5",
 		PoolRoute:       []string{"pool-1"},
 		Recipient:       "0xabc",
 	})
-	if err == nil {
-		t.Fatal("SwapTransactionPayload accepted coin type without FA conversion")
+	if err != nil {
+		t.Fatalf("SwapTransactionPayload returned error: %v", err)
 	}
+	if payload.Function != MainnetContractAddress+"::router_v3::swap_batch_coin_entry" {
+		t.Fatalf("swap function = %q", payload.Function)
+	}
+	assertArguments(t, anySlice(payload.TypeArguments), []any{aptosCoinType})
+	assertArguments(t, payload.FunctionArguments, []any{
+		[]string{"pool-1"},
+		"0xa",
+		exampleCoinFAType,
+		"1000",
+		"995",
+		"0xabc",
+	})
+}
+
+func TestSwapPayloadUsesOriginalCoinTypesForPairSelection(t *testing.T) {
+	t.Parallel()
+
+	sdk := newMainnetClientForPayloads(t)
+	payload, err := sdk.Swap.SwapTransactionPayload(SwapTransactionPayloadArgs{
+		CurrencyA:       "0x1",
+		CurrencyB:       exampleCoinType,
+		CurrencyAAmount: "1000",
+		CurrencyBAmount: "1000",
+		Slippage:        "0.5",
+		PoolRoute:       []string{"pool-1"},
+		Recipient:       "0xabc",
+	})
+	if err != nil {
+		t.Fatalf("SwapTransactionPayload returned error: %v", err)
+	}
+	if payload.Function != MainnetContractAddress+"::router_v3::swap_batch" {
+		t.Fatalf("swap function = %q", payload.Function)
+	}
+	assertArguments(t, anySlice(payload.TypeArguments), []any{})
+	assertArguments(t, payload.FunctionArguments, []any{
+		[]string{"pool-1"},
+		"0x1",
+		exampleCoinFAType,
+		"1000",
+		"995",
+		"0xabc",
+	})
+}
+
+func TestPartnershipSwapPreservesCoinTypeArguments(t *testing.T) {
+	t.Parallel()
+
+	sdk := newMainnetClientForPayloads(t)
+	payload, err := sdk.Swap.SwapWithPartnershipTransactionPayload(SwapWithPartnershipTransactionPayloadArgs{
+		SwapTransactionPayloadArgs: SwapTransactionPayloadArgs{
+			CurrencyA:       longAptosCoinType,
+			CurrencyB:       exampleCoinType,
+			CurrencyAAmount: "1000",
+			CurrencyBAmount: "1000",
+			Slippage:        "0.5",
+			PoolRoute:       []string{"pool-1"},
+			Recipient:       "0xabc",
+		},
+		Partnership: "partner-1",
+	})
+	if err != nil {
+		t.Fatalf("SwapWithPartnershipTransactionPayload returned error: %v", err)
+	}
+	assertArguments(t, anySlice(payload.TypeArguments), []any{})
+	assertArguments(t, payload.FunctionArguments, []any{
+		[]string{"pool-1"},
+		longAptosCoinType,
+		exampleCoinType,
+		"1000",
+		"995",
+		"partner-1",
+	})
+}
+
+func anySlice(values []string) []any {
+	out := make([]any, 0, len(values))
+	for _, value := range values {
+		out = append(out, value)
+	}
+	return out
 }
 
 func TestCreatePoolTransactionPayload(t *testing.T) {

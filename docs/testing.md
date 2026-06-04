@@ -22,8 +22,8 @@ go vet ./...
 | Reward REST reads | Non-zero reward history filtering | `modules_test.go` |
 | Swap quotes | `flag=out`, `flag=in`, safe mode query behavior | `modules_test.go` |
 | Aggregate route fetch | Mainnet-only guard and route response decoding | `aggregate_test.go` |
-| Payload builders | Pool, liquidity, pool estimate view payloads, position amount view payload, swap, reward, and claim argument order | `payload_test.go`, `pool_payload_test.go`, `position_payload_test.go` |
-| Parity fixtures | Golden snapshots for representative payloads and REST responses | `parity_test.go`, `testdata/parity` |
+| Payload builders | Pool, liquidity, pool estimate view payloads, position amount view payload, swap coin/FA argument order, reward, and claim argument order | `payload_test.go`, `pool_payload_test.go`, `position_payload_test.go` |
+| Parity fixtures | Golden snapshots for representative payloads, including swap coin-type conversion, and REST responses | `parity_test.go`, `testdata/parity` |
 
 ## Golden Fixtures
 
@@ -40,7 +40,6 @@ ordering.
 | Gap | Tracking issue |
 | --- | --- |
 | Aptos view-call integration | #13 |
-| Swap coin type to fungible asset metadata conversion | #6 |
 | Aggregate swap transaction script composition | #7 |
 | Strong REST response structs if schemas stabilize | #8 |
 | Live integration tests behind environment variables | #8 |
