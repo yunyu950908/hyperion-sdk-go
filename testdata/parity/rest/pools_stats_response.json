@@ -1,0 +1,10 @@
+{
+  "items": [
+    {
+      "poolId": "pool-1",
+      "feeTier": "2",
+      "token1": "0x1",
+      "token2": "0x2"
+    }
+  ]
+}

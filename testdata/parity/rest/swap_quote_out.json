@@ -1,0 +1,8 @@
+{
+  "amount": "1000",
+  "from": "0x1",
+  "to": "0x2",
+  "flag": "out",
+  "safeMode": "true",
+  "outputAmount": "995"
+}

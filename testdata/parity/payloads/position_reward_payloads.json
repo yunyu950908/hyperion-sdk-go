@@ -1,0 +1,49 @@
+{
+  "claimAllRewards": {
+    "function": "0x8b4a2c4bb53857c718a04c020b98f8c2e1f99a68b0f57389a8bf5434cd22e05c::router_v3::claim_fees_and_rewards",
+    "typeArguments": [],
+    "functionArguments": [
+      [
+        "pos-1"
+      ],
+      "0xabc"
+    ]
+  },
+  "claimFee": {
+    "function": "0x8b4a2c4bb53857c718a04c020b98f8c2e1f99a68b0f57389a8bf5434cd22e05c::router_v3::claim_fees",
+    "typeArguments": [],
+    "functionArguments": [
+      [
+        "pos-1"
+      ],
+      "0xabc"
+    ]
+  },
+  "claimReward": {
+    "function": "0x8b4a2c4bb53857c718a04c020b98f8c2e1f99a68b0f57389a8bf5434cd22e05c::router_v3::claim_rewards",
+    "typeArguments": [],
+    "functionArguments": [
+      "pos-1",
+      "0xabc"
+    ]
+  },
+  "pendingRewards": {
+    "function": "0x8b4a2c4bb53857c718a04c020b98f8c2e1f99a68b0f57389a8bf5434cd22e05c::pool_v3::get_pending_rewards",
+    "typeArguments": [],
+    "functionArguments": [
+      "pos-1"
+    ]
+  },
+  "removeLiquidity": {
+    "function": "0x8b4a2c4bb53857c718a04c020b98f8c2e1f99a68b0f57389a8bf5434cd22e05c::router_adapter::remove_liquidity_entry_v2",
+    "typeArguments": [],
+    "functionArguments": [
+      "pos-1",
+      "12345",
+      "995",
+      "1990",
+      "0xabc",
+      "<deadline>"
+    ]
+  }
+}

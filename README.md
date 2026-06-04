@@ -117,6 +117,9 @@ go test ./...
 go vet ./...
 ```
 
+See [docs/testing.md](docs/testing.md) for the coverage matrix, parity fixture
+layout, and integration test plan.
+
 ## Design Notes
 
 See [docs/design.md](docs/design.md) for the TypeScript-to-Go module mapping and
