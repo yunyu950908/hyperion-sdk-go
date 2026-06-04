@@ -67,6 +67,97 @@ type RemoveLiquidityTransactionPayloadArgs struct {
 	Recipient       string
 }
 
+type poolEstAmountArgs struct {
+	CurrencyA        string
+	CurrencyB        string
+	FeeTierIndex     string
+	TickLower        string
+	TickUpper        string
+	CurrentPriceTick string
+}
+
+// EstCurrencyAAmountFromBArgs configures a currency-A-from-B view payload.
+type EstCurrencyAAmountFromBArgs struct {
+	CurrencyA        string
+	CurrencyB        string
+	FeeTierIndex     string
+	TickLower        string
+	TickUpper        string
+	CurrentPriceTick string
+	CurrencyBAmount  string
+}
+
+// EstCurrencyBAmountFromAArgs configures a currency-B-from-A view payload.
+type EstCurrencyBAmountFromAArgs struct {
+	CurrencyA        string
+	CurrencyB        string
+	FeeTierIndex     string
+	TickLower        string
+	TickUpper        string
+	CurrentPriceTick string
+	CurrencyAAmount  string
+}
+
+// EstCurrencyAAmountFromBPayload builds the view payload for estimating token A from token B.
+func (p *PoolService) EstCurrencyAAmountFromBPayload(args EstCurrencyAAmountFromBArgs) (EntryFunctionPayload, error) {
+	tickLower, tickUpper, currentPriceTick, err := parseEstimateTicks(poolEstAmountArgs{
+		CurrencyA:        args.CurrencyA,
+		CurrencyB:        args.CurrencyB,
+		FeeTierIndex:     args.FeeTierIndex,
+		TickLower:        args.TickLower,
+		TickUpper:        args.TickUpper,
+		CurrentPriceTick: args.CurrentPriceTick,
+	})
+	if err != nil {
+		return EntryFunctionPayload{}, err
+	}
+	return EntryFunctionPayload{
+		Function:      p.client.Options.ContractAddress + "::router_v3::optimal_liquidity_amounts_from_b",
+		TypeArguments: []string{},
+		FunctionArguments: []any{
+			TickComplement(tickLower),
+			TickComplement(tickUpper),
+			TickComplement(currentPriceTick),
+			args.CurrencyA,
+			args.CurrencyB,
+			args.FeeTierIndex,
+			args.CurrencyBAmount,
+			0,
+			0,
+		},
+	}, nil
+}
+
+// EstCurrencyBAmountFromAPayload builds the view payload for estimating token B from token A.
+func (p *PoolService) EstCurrencyBAmountFromAPayload(args EstCurrencyBAmountFromAArgs) (EntryFunctionPayload, error) {
+	tickLower, tickUpper, currentPriceTick, err := parseEstimateTicks(poolEstAmountArgs{
+		CurrencyA:        args.CurrencyA,
+		CurrencyB:        args.CurrencyB,
+		FeeTierIndex:     args.FeeTierIndex,
+		TickLower:        args.TickLower,
+		TickUpper:        args.TickUpper,
+		CurrentPriceTick: args.CurrentPriceTick,
+	})
+	if err != nil {
+		return EntryFunctionPayload{}, err
+	}
+	return EntryFunctionPayload{
+		Function:      p.client.Options.ContractAddress + "::router_v3::optimal_liquidity_amounts_from_a",
+		TypeArguments: []string{},
+		FunctionArguments: []any{
+			TickComplement(tickLower),
+			TickComplement(tickUpper),
+			TickComplement(currentPriceTick),
+			args.CurrencyA,
+			args.CurrencyB,
+			args.FeeTierIndex,
+			args.CurrencyAAmount,
+			0,
+			0,
+		},
+	}, nil
+}
+
 // CreatePoolTransactionPayload builds a create liquidity pool payload.
 func (p *PoolService) CreatePoolTransactionPayload(args CreatePoolTransactionPayloadArgs) (EntryFunctionPayload, error) {
 	if err := CheckCurrencyPair(args.CurrencyA, args.CurrencyB); err != nil {
@@ -418,4 +509,20 @@ func roundDecimalString(value string) (string, error) {
 
 func parseInt64(value string) (int64, error) {
 	return strconv.ParseInt(value, 10, 64)
+}
+
+func parseEstimateTicks(args poolEstAmountArgs) (int64, int64, int64, error) {
+	tickLower, err := parseInt64(args.TickLower)
+	if err != nil {
+		return 0, 0, 0, err
+	}
+	tickUpper, err := parseInt64(args.TickUpper)
+	if err != nil {
+		return 0, 0, 0, err
+	}
+	currentPriceTick, err := parseInt64(args.CurrentPriceTick)
+	if err != nil {
+		return 0, 0, 0, err
+	}
+	return tickLower, tickUpper, currentPriceTick, nil
 }

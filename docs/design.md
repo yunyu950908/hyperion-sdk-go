@@ -22,11 +22,11 @@ requirement explicitly asks for them.
 | `src/index.ts` | `Client`, `Options`, `Init` | Go uses explicit errors and service fields instead of JS getters. |
 | `src/config/index.ts` | network constants and `InitOptions` | Mainnet/testnet contract addresses and API hosts are copied from upstream. |
 | `src/modules/requestModule.ts` | `RequestClient` | Go adds `context.Context`, injectable `http.Client`, and typed HTTP status errors. |
-| `src/modules/poolModule.ts` | `PoolService` | REST reads are direct parity. Payload builders need Go payload representation. |
+| `src/modules/poolModule.ts` | `PoolService` | REST reads, create-pool payloads, pool estimate view payloads, and pool math helpers are ported. Live Aptos view execution remains separate. |
 | `src/modules/positionModule.ts` | `PositionService` | REST reads and zero-amount filtering are direct parity. Payload builders are pure data construction. |
 | `src/modules/rewardModule.ts` | `RewardService` | Reward history and claim payloads map directly. |
 | `src/modules/swapModule.ts` | `SwapService` | Quote methods map to REST. Aggregate composer is isolated because it depends on TS script-composer APIs. |
-| `src/utils/index.ts` | shared utility functions/constants | Tick complement, fee tier config, and slippage helpers are implemented. Full price/tick helper parity remains tracked in #4. |
+| `src/utils/index.ts` | shared utility functions/constants | Tick complement, fee tier config, slippage helpers, price/tick conversion, and pool deadline helpers are implemented. |
 | `src/helper/aggregateSwap/*` | aggregate route types/helper | Route fetch can be ported directly. Transaction script composition needs a Go composer strategy. |
 
 ## Go API Principles
@@ -64,6 +64,9 @@ requirement explicitly asks for them.
 
 - Select or build an Aptos Go transaction-composer abstraction for aggregate
   swap script generation.
+- Add live Aptos view execution for pool and position view payloads, tracked by
+  #13. The current SDK builds parity view payloads but does not submit them to a
+  fullnode.
 - Decide how closely to emulate `aptos-tool` token-pair selection. The current
   working assumption is `::` means a coin type; plain `0x...` means a fungible
   asset metadata address. Swap payload builders currently reject coin types

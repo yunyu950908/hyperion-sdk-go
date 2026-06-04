@@ -13,6 +13,8 @@ import (
 const (
 	// Base is the tick math base used by Hyperion pools.
 	Base = 1.0001
+	// U64Max matches the upstream TypeScript SDK's u64Max constant.
+	U64Max = "184467440737095516"
 	// LowestTick is the minimum supported pool tick.
 	LowestTick = "-443636"
 	// HighestTick is the maximum supported pool tick.
@@ -106,14 +108,100 @@ func LogBase(number float64) float64 {
 	return math.Log(number) / math.Log(Base)
 }
 
+// PriceToTickArgs configures PriceToTick.
+type PriceToTickArgs struct {
+	Price         float64
+	FeeTierIndex  FeeTierIndex
+	DecimalsRatio float64
+}
+
+// PriceToTick converts a price to the nearest usable tick for a fee tier.
+//
+// The boolean return is false when the upstream TypeScript SDK would return
+// null because the logarithm result is NaN.
+func PriceToTick(args PriceToTickArgs) (string, bool, error) {
+	ret := LogBase(args.Price / args.DecimalsRatio)
+	if math.IsNaN(ret) {
+		return "", false, nil
+	}
+	lowest, highest, err := roundedTickBounds(args.FeeTierIndex)
+	if err != nil {
+		return "", false, err
+	}
+	if math.IsInf(ret, -1) {
+		return lowest, true, nil
+	}
+	if math.IsInf(ret, 1) {
+		return highest, true, nil
+	}
+
+	rounded, err := RoundTickBySpacing(ret, args.FeeTierIndex)
+	if err != nil {
+		return "", false, err
+	}
+
+	roundedFloat, err := strconv.ParseFloat(rounded, 64)
+	if err != nil {
+		return "", false, err
+	}
+	lowestFloat, err := strconv.ParseFloat(lowest, 64)
+	if err != nil {
+		return "", false, err
+	}
+	highestFloat, err := strconv.ParseFloat(highest, 64)
+	if err != nil {
+		return "", false, err
+	}
+	if ret < 0 {
+		return strconv.FormatFloat(math.Max(roundedFloat, lowestFloat), 'f', 0, 64), true, nil
+	}
+	return strconv.FormatFloat(math.Min(roundedFloat, highestFloat), 'f', 0, 64), true, nil
+}
+
+// TickToPriceArgs configures TickToPrice.
+type TickToPriceArgs struct {
+	Tick          float64
+	DecimalsRatio float64
+}
+
+// TickToPrice converts a tick to a price adjusted by decimals ratio.
+func TickToPrice(args TickToPriceArgs) string {
+	tick := math.Round(args.Tick)
+	price := math.Pow(Base, tick) * args.DecimalsRatio
+	return strconv.FormatFloat(price, 'g', -1, 64)
+}
+
 // RoundTickBySpacing rounds a tick to the fee tier's configured spacing.
 func RoundTickBySpacing(tick float64, feeTierIndex FeeTierIndex) (string, error) {
 	index := int(feeTierIndex)
 	if index < 0 || index >= len(FeeTierStep) {
 		return "", errors.New("fee tier index out of range")
 	}
+	if math.IsNaN(tick) || math.IsInf(tick, 0) {
+		return "", errors.New("tick must be finite")
+	}
 	step := float64(FeeTierStep[index])
 	return strconv.FormatInt(int64(math.Round(tick/step)*step), 10), nil
+}
+
+func roundedTickBounds(feeTierIndex FeeTierIndex) (string, string, error) {
+	lowestTick, err := strconv.ParseFloat(LowestTick, 64)
+	if err != nil {
+		return "", "", err
+	}
+	highestTick, err := strconv.ParseFloat(HighestTick, 64)
+	if err != nil {
+		return "", "", err
+	}
+	lowest, err := RoundTickBySpacing(lowestTick, feeTierIndex)
+	if err != nil {
+		return "", "", err
+	}
+	highest, err := RoundTickBySpacing(highestTick, feeTierIndex)
+	if err != nil {
+		return "", "", err
+	}
+	return lowest, highest, nil
 }
 
 func parseRat(value string) (*big.Rat, error) {

@@ -25,6 +25,8 @@ Implemented so far:
 - Aggregate swap route fetch with the upstream mainnet-only guard.
 - Entry-function payload builders for common pool, position, reward, and swap
   workflows.
+- Pool math helpers for price/tick conversion and pool estimate view payload
+  builders.
 
 Still tracked:
 
