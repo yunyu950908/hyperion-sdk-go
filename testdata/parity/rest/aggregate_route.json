@@ -1,0 +1,42 @@
+{
+  "fromToken": {
+    "address": "0x1"
+  },
+  "toToken": {
+    "address": "0x2"
+  },
+  "exactIn": true,
+  "feeAmount": "1",
+  "fromTokenAmount": "1000",
+  "minToTokenAmount": "990",
+  "maxFromTokenAmount": "1000",
+  "toTokenAmount": "995",
+  "quotes": {
+    "route": [
+      {
+        "amountIn": "1000",
+        "amountOut": "995",
+        "percentage": 100,
+        "feeAmount": "1",
+        "routeTaken": [
+          {
+            "fromToken": {
+              "tokenType": "0x1"
+            },
+            "toToken": {
+              "tokenType": "0x2"
+            },
+            "dexName": "Hyperion",
+            "poolId": "pool-1",
+            "a2b": true,
+            "sqrtPriceLimit": "0",
+            "poolType": "",
+            "amountIn": "1000",
+            "amountOut": "995"
+          }
+        ]
+      }
+    ],
+    "refundRoute": []
+  }
+}
