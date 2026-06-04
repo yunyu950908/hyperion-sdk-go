@@ -23,8 +23,8 @@ requirement explicitly asks for them.
 | `src/config/index.ts` | network constants and `InitOptions` | Mainnet/testnet contract addresses and API hosts are copied from upstream. |
 | `src/modules/requestModule.ts` | `RequestClient` | Go adds `context.Context`, injectable `http.Client`, and typed HTTP status errors. |
 | `src/modules/poolModule.ts` | `PoolService` | REST reads, create-pool payloads, pool estimate view payloads, and pool math helpers are ported. Live Aptos view execution remains separate. |
-| `src/modules/positionModule.ts` | `PositionService` | REST reads and zero-amount filtering are direct parity. Payload builders are pure data construction. |
-| `src/modules/rewardModule.ts` | `RewardService` | Reward history and claim payloads map directly. |
+| `src/modules/positionModule.ts` | `PositionService` | REST reads, zero-amount filtering, liquidity payloads, claim payloads, strict remove-recipient validation, and amount-by-liquidity view payload construction are ported. Live view execution remains separate. |
+| `src/modules/rewardModule.ts` | `RewardService` | Reward history, pending reward view payload, and claim payloads are ported. |
 | `src/modules/swapModule.ts` | `SwapService` | Quote methods map to REST. Aggregate composer is isolated because it depends on TS script-composer APIs. |
 | `src/utils/index.ts` | shared utility functions/constants | Tick complement, fee tier config, slippage helpers, price/tick conversion, and pool deadline helpers are implemented. |
 | `src/helper/aggregateSwap/*` | aggregate route types/helper | Route fetch can be ported directly. Transaction script composition needs a Go composer strategy. |

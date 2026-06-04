@@ -288,7 +288,7 @@ func (p *PositionService) RemoveLiquidityTransactionPayload(args RemoveLiquidity
 	if err := CheckSlippage(slippage); err != nil {
 		return EntryFunctionPayload{}, err
 	}
-	if !strings.HasPrefix(args.Recipient, "0x") {
+	if !isStrictAccountAddress(args.Recipient) {
 		return EntryFunctionPayload{}, errors.New("invalid recipient address")
 	}
 	deltaLiquidity, err := roundDecimalString(args.DeltaLiquidity)
@@ -331,6 +331,15 @@ func (p *PositionService) RemoveLiquidityTransactionPayload(args RemoveLiquidity
 			FunctionArguments: functionArguments,
 		},
 	}), nil
+}
+
+// FetchTokensAmountByPositionIDPayload builds a view payload for position token amounts.
+func (p *PositionService) FetchTokensAmountByPositionIDPayload(positionID string) EntryFunctionPayload {
+	return EntryFunctionPayload{
+		Function:          p.client.Options.ContractAddress + "::router_v3::get_amount_by_liquidity",
+		TypeArguments:     []string{},
+		FunctionArguments: []any{positionID},
+	}
 }
 
 // FetchRewardsPayload builds a pending rewards Aptos view payload.
@@ -475,6 +484,22 @@ func selectTokenPairPayload(currencyA, currencyB string, variants []EntryFunctio
 
 func isCoinType(currency string) bool {
 	return strings.Contains(currency, "::")
+}
+
+func isStrictAccountAddress(address string) bool {
+	if len(address) != 66 || !strings.HasPrefix(address, "0x") {
+		return false
+	}
+	for _, ch := range address[2:] {
+		if !isHex(ch) {
+			return false
+		}
+	}
+	return true
+}
+
+func isHex(ch rune) bool {
+	return ('0' <= ch && ch <= '9') || ('a' <= ch && ch <= 'f') || ('A' <= ch && ch <= 'F')
 }
 
 func slippageAmounts(amountA, amountB, slippage string) (string, string, error) {

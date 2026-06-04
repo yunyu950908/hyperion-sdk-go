@@ -182,7 +182,7 @@ func TestAddAndRemoveLiquidityTransactionPayload(t *testing.T) {
 		CurrencyBAmount: "2000",
 		DeltaLiquidity:  "12345",
 		Slippage:        "0.5",
-		Recipient:       "0xabc",
+		Recipient:       "0x0000000000000000000000000000000000000000000000000000000000000abc",
 	})
 	if err != nil {
 		t.Fatalf("RemoveLiquidityTransactionPayload returned error: %v", err)
@@ -195,7 +195,7 @@ func TestAddAndRemoveLiquidityTransactionPayload(t *testing.T) {
 		"12345",
 		"995",
 		"1990",
-		"0xabc",
+		"0x0000000000000000000000000000000000000000000000000000000000000abc",
 	})
 	assertDeadlineArgument(t, remove.FunctionArguments[len(remove.FunctionArguments)-1])
 }

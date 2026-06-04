@@ -22,7 +22,7 @@ go vet ./...
 | Reward REST reads | Non-zero reward history filtering | `modules_test.go` |
 | Swap quotes | `flag=out`, `flag=in`, safe mode query behavior | `modules_test.go` |
 | Aggregate route fetch | Mainnet-only guard and route response decoding | `aggregate_test.go` |
-| Payload builders | Pool, liquidity, pool estimate view payloads, swap, reward, and claim argument order | `payload_test.go`, `pool_payload_test.go` |
+| Payload builders | Pool, liquidity, pool estimate view payloads, position amount view payload, swap, reward, and claim argument order | `payload_test.go`, `pool_payload_test.go`, `position_payload_test.go` |
 | Parity fixtures | Golden snapshots for representative payloads and REST responses | `parity_test.go`, `testdata/parity` |
 
 ## Golden Fixtures

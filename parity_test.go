@@ -70,7 +70,7 @@ func TestParityGoldenAdditionalPayloads(t *testing.T) {
 		CurrencyBAmount: "2000",
 		DeltaLiquidity:  "12345",
 		Slippage:        "0.5",
-		Recipient:       "0xabc",
+		Recipient:       "0x0000000000000000000000000000000000000000000000000000000000000abc",
 	})
 	if err != nil {
 		t.Fatalf("RemoveLiquidityTransactionPayload returned error: %v", err)
