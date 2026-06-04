@@ -32,10 +32,11 @@ Implemented so far:
   builders.
 - Position and reward payload builders, including amount-by-liquidity view
   payload construction.
+- Aptos view execution through an injectable `ViewExecutor` and built-in REST
+  fullnode executor.
 
 Still tracked:
 
-- Aptos view-call integration.
 - Live transaction integration for aggregate composer adapters.
 - Strong response structs for REST endpoints if stable API schemas become
   available.
@@ -77,6 +78,7 @@ sdk, err := hyperion.New(hyperion.Options{
 	ContractAddress:           hyperion.TestnetContractAddress,
 	HyperionFullNodeIndexerURL: "https://api-testnet.hyperion.xyz",
 	HyperionAPIHost:           "https://api-testnet.hyperion.xyz",
+	AptosFullNodeURL:          "https://<aptos-fullnode>/v1",
 	AptosAPIKey:               "",
 })
 ```
@@ -137,6 +139,36 @@ payload, err := sdk.Swap.SwapTransactionPayload(hyperion.SwapTransactionPayloadA
 	Recipient:       "0xrecipient",
 })
 ```
+
+## Aptos View Calls
+
+The SDK keeps payload builders offline and deterministic. To execute a view
+payload, configure an Aptos fullnode URL or inject your own `ViewExecutor`.
+
+```go
+sdk, err := hyperion.Init(hyperion.InitOptions{
+	Network:          hyperion.NetworkMainnet,
+	AptosFullNodeURL: "https://<aptos-fullnode>/v1",
+	AptosAPIKey:      os.Getenv("APTOS_API_KEY"),
+})
+if err != nil {
+	return err
+}
+
+values, err := sdk.Pool.EstCurrencyAAmountFromB(ctx, hyperion.EstCurrencyAAmountFromBArgs{
+	CurrencyA:        "0x...",
+	CurrencyB:        "0x...",
+	FeeTierIndex:     "2",
+	TickLower:        "-60",
+	TickUpper:        "60",
+	CurrentPriceTick: "0",
+	CurrencyBAmount:  "1000000",
+})
+```
+
+`EntryFunctionPayload` preserves the upstream TypeScript SDK's camelCase JSON
+field names for parity snapshots. The REST view executor converts it to Aptos
+fullnode request fields: `function`, `type_arguments`, and `arguments`.
 
 ## Testing
 
