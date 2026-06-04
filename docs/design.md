@@ -25,9 +25,9 @@ requirement explicitly asks for them.
 | `src/modules/poolModule.ts` | `PoolService` | REST reads, create-pool payloads, pool estimate view payloads, and pool math helpers are ported. Live Aptos view execution remains separate. |
 | `src/modules/positionModule.ts` | `PositionService` | REST reads, zero-amount filtering, liquidity payloads, claim payloads, strict remove-recipient validation, and amount-by-liquidity view payload construction are ported. Live view execution remains separate. |
 | `src/modules/rewardModule.ts` | `RewardService` | Reward history, pending reward view payload, and claim payloads are ported. |
-| `src/modules/swapModule.ts` | `SwapService` | Quote methods, basic payloads, and swap coin-type to FA metadata conversion are ported. Aggregate composer is isolated because it depends on TS script-composer APIs. |
+| `src/modules/swapModule.ts` | `SwapService` | Quote methods, basic payloads, swap coin-type to FA metadata conversion, aggregate route fetch, and aggregate composer recorder strategy are ported. |
 | `src/utils/index.ts` | shared utility functions/constants | Tick complement, fee tier config, slippage helpers, price/tick conversion, and pool deadline helpers are implemented. |
-| `src/helper/aggregateSwap/*` | aggregate route types/helper | Route fetch can be ported directly. Transaction script composition needs a Go composer strategy. |
+| `src/helper/aggregateSwap/*` | aggregate route types/helper | Route fetch and composer call planning are ported through a Go composer interface and deterministic recorder. Submit-ready transaction serialization remains an adapter concern. |
 
 ## Go API Principles
 
@@ -41,8 +41,9 @@ requirement explicitly asks for them.
   upstream SDK returns JS numbers, Go payload builders may keep string values if
   that is safer for Aptos SDK consumers; differences must be documented.
 - Aggregate swap route fetching is part of the core SDK. Aggregate transaction
-  composition is tracked separately because Go needs an equivalent abstraction
-  for batched Aptos script-composer calls.
+  composition uses an `AggregateSwapComposer` interface plus
+  `AggregateSwapRecorder` to mirror TypeScript batched-call planning without
+  requiring a specific Aptos Go transaction builder.
 
 ## REST Endpoint Inventory
 
@@ -62,11 +63,12 @@ requirement explicitly asks for them.
 
 ## Open Design Items
 
-- Select or build an Aptos Go transaction-composer abstraction for aggregate
-  swap script generation.
 - Add live Aptos view execution for pool and position view payloads, tracked by
   #13. The current SDK builds parity view payloads but does not submit them to a
   fullnode.
+- Add a submit-ready Aptos Go SDK adapter for `AggregateSwapComposer` if a
+  production integration requires direct transaction serialization. The current
+  recorder is intentionally deterministic and offline.
 - Basic swap payloads emulate `aptos-tool` token-pair selection and
   `Token.faTypeCalculate()`: `address::module::name` values are treated as coin
   types, APT maps to `0xa`, and other coin types derive FA metadata with Aptos
