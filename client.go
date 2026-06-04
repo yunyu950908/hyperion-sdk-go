@@ -28,15 +28,19 @@ type Options struct {
 	ContractAddress            string
 	HyperionFullNodeIndexerURL string
 	HyperionAPIHost            string
+	AptosFullNodeURL           string
 	AptosAPIKey                string
 	HTTPClient                 *http.Client
+	ViewExecutor               ViewExecutor
 }
 
 // InitOptions configures Init with Hyperion's built-in network defaults.
 type InitOptions struct {
-	Network     Network
-	AptosAPIKey string
-	HTTPClient  *http.Client
+	Network          Network
+	AptosFullNodeURL string
+	AptosAPIKey      string
+	HTTPClient       *http.Client
+	ViewExecutor     ViewExecutor
 }
 
 // Client is the root Hyperion SDK handle. Services mirror the upstream TypeScript
@@ -45,6 +49,7 @@ type Client struct {
 	Options    Options
 	Request    *RequestClient
 	APIRequest *RequestClient
+	ViewClient ViewExecutor
 	Pool       *PoolService
 	Position   *PositionService
 	Reward     *RewardService
@@ -80,8 +85,10 @@ func Init(options InitOptions) (*Client, error) {
 			ContractAddress:            MainnetContractAddress,
 			HyperionFullNodeIndexerURL: "https://api.hyperion.xyz",
 			HyperionAPIHost:            "https://api.hyperion.xyz",
+			AptosFullNodeURL:           options.AptosFullNodeURL,
 			AptosAPIKey:                options.AptosAPIKey,
 			HTTPClient:                 options.HTTPClient,
+			ViewExecutor:               options.ViewExecutor,
 		})
 	case NetworkTestnet:
 		return New(Options{
@@ -89,8 +96,10 @@ func Init(options InitOptions) (*Client, error) {
 			ContractAddress:            TestnetContractAddress,
 			HyperionFullNodeIndexerURL: "https://api-testnet.hyperion.xyz",
 			HyperionAPIHost:            "https://api-testnet.hyperion.xyz",
+			AptosFullNodeURL:           options.AptosFullNodeURL,
 			AptosAPIKey:                options.AptosAPIKey,
 			HTTPClient:                 options.HTTPClient,
+			ViewExecutor:               options.ViewExecutor,
 		})
 	default:
 		return nil, errors.New("network must be mainnet or testnet")
@@ -114,6 +123,17 @@ func New(options Options) (*Client, error) {
 
 	options.HyperionFullNodeIndexerURL = normalizeAPIHost(options.HyperionFullNodeIndexerURL)
 	options.HyperionAPIHost = normalizeAPIHost(options.HyperionAPIHost)
+	if options.AptosFullNodeURL != "" {
+		options.AptosFullNodeURL = normalizeAPIHost(options.AptosFullNodeURL)
+	}
+	viewExecutor := options.ViewExecutor
+	if viewExecutor == nil && options.AptosFullNodeURL != "" {
+		var err error
+		viewExecutor, err = NewAptosViewExecutor(options.AptosFullNodeURL, options.AptosAPIKey, options.HTTPClient)
+		if err != nil {
+			return nil, err
+		}
+	}
 	request := NewRequestClient(options.HyperionFullNodeIndexerURL, options.HTTPClient)
 	apiRequest := NewRequestClient(options.HyperionAPIHost, options.HTTPClient)
 
@@ -121,6 +141,7 @@ func New(options Options) (*Client, error) {
 		Options:    options,
 		Request:    request,
 		APIRequest: apiRequest,
+		ViewClient: viewExecutor,
 	}
 	client.Pool = &PoolService{client: client}
 	client.Position = &PositionService{client: client}
