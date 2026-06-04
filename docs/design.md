@@ -1,0 +1,73 @@
+# Hyperion SDK Go Migration Design
+
+This document tracks the migration from the upstream TypeScript SDK at
+`Hyperionxyz/hyperion-sdk/packages/sdk` to the Go module
+`github.com/yunyu950908/hyperion-sdk-go`.
+
+## Upstream Snapshot
+
+- Package: `@hyperionxyz/sdk`
+- Version audited: `0.1.2`
+- Source root: `packages/sdk/src`
+- Public root: `src/index.ts`
+
+The upstream `0.1.x` SDK moved Hyperion data reads from GraphQL to REST. The Go
+SDK should not reintroduce removed low-level GraphQL APIs unless a future
+requirement explicitly asks for them.
+
+## Module Mapping
+
+| TypeScript source | Go target | Notes |
+| --- | --- | --- |
+| `src/index.ts` | `Client`, `Options`, `Init` | Go uses explicit errors and service fields instead of JS getters. |
+| `src/config/index.ts` | network constants and `InitOptions` | Mainnet/testnet contract addresses and API hosts are copied from upstream. |
+| `src/modules/requestModule.ts` | `RequestClient` | Go adds `context.Context`, injectable `http.Client`, and typed HTTP status errors. |
+| `src/modules/poolModule.ts` | `PoolService` | REST reads are direct parity. Payload builders need Go payload representation. |
+| `src/modules/positionModule.ts` | `PositionService` | REST reads and zero-amount filtering are direct parity. Payload builders are pure data construction. |
+| `src/modules/rewardModule.ts` | `RewardService` | Reward history and claim payloads map directly. |
+| `src/modules/swapModule.ts` | `SwapService` | Quote methods map to REST. Aggregate composer is isolated because it depends on TS script-composer APIs. |
+| `src/utils/index.ts` | shared utility functions/constants | Tick complement, fee tier config, and slippage helpers are implemented. Full price/tick helper parity remains tracked in #4. |
+| `src/helper/aggregateSwap/*` | aggregate route types/helper | Route fetch can be ported directly. Transaction script composition needs a Go composer strategy. |
+
+## Go API Principles
+
+- Every networked method accepts `context.Context`.
+- HTTP behavior is testable through an injected `*http.Client`.
+- REST endpoints decode into flexible `JSONMap` values until Hyperion publishes
+  stable response schemas for every endpoint.
+- Transaction payload builders should return typed Go structs instead of raw
+  `map[string]any`.
+- Numeric token amounts should avoid JavaScript-style precision loss. Where the
+  upstream SDK returns JS numbers, Go payload builders may keep string values if
+  that is safer for Aptos SDK consumers; differences must be documented.
+- Aggregate swap route fetching is part of the core SDK. Aggregate transaction
+  composition is tracked separately because Go needs an equivalent abstraction
+  for batched Aptos script-composer calls.
+
+## REST Endpoint Inventory
+
+| Module | Method | Endpoint |
+| --- | --- | --- |
+| Pool | `FetchAllPools` | `GET /base/data/pools/stats` |
+| Pool | `FetchPoolByID` | `GET /base/data/pools/stats?poolId=...` |
+| Pool | `GetPoolByTokenPairAndFeeTier` | `GET /base/data/pools/by-token-pair` |
+| Pool | `FetchTicks` | `GET /base/data/pools/{poolId}/liquidity-accumulation` |
+| Position | `FetchAllPositionsByAddress` | `GET /base/data/positions?address=...` |
+| Position | `FetchPositionByID` | `GET /base/data/liquidity/ownerships` |
+| Position | `FetchFeeHistory` | `GET /base/data/rewards/claimed-fees` |
+| Reward | `FetchRewardHistory` | `GET /base/data/rewards/claimed-farms` |
+| Swap | `EstFromAmount` | `GET /base/rate/getSwapInfo?flag=out` |
+| Swap | `EstToAmount` | `GET /base/rate/getSwapInfo?flag=in` |
+| Swap | `EstAmountByAggregateSwap` | `GET /base/aggregator/getAggRoute` |
+
+## Open Design Items
+
+- Select or build an Aptos Go transaction-composer abstraction for aggregate
+  swap script generation.
+- Decide how closely to emulate `aptos-tool` token-pair selection. The current
+  working assumption is `::` means a coin type; plain `0x...` means a fungible
+  asset metadata address. Swap payload builders currently reject coin types
+  because the upstream SDK converts coin types to fungible asset metadata before
+  building arguments, and the Go port does not yet include that conversion.
+- Replace `JSONMap` REST returns with stronger response structs if upstream API
+  schemas become available.
