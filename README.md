@@ -24,7 +24,8 @@ Implemented so far:
 - Swap quote REST methods.
 - Aggregate swap route fetch with the upstream mainnet-only guard.
 - Entry-function payload builders for common pool, position, reward, and swap
-  workflows.
+  workflows, including basic swap coin-type to fungible-asset metadata
+  conversion.
 - Pool math helpers for price/tick conversion and pool estimate view payload
   builders.
 - Position and reward payload builders, including amount-by-liquidity view
@@ -34,9 +35,6 @@ Still tracked:
 
 - Aptos view-call integration.
 - Aggregate swap transaction script composition.
-- Swap payload coin-type to fungible-asset conversion. Current swap payload
-  builders return an explicit error for coin types instead of silently producing
-  a wrong payload.
 - Strong response structs for REST endpoints if stable API schemas become
   available.
 
@@ -102,7 +100,7 @@ JavaScript-style precision loss.
 
 ```go
 payload, err := sdk.Swap.SwapTransactionPayload(hyperion.SwapTransactionPayloadArgs{
-	CurrencyA:       "0x...",
+	CurrencyA:       "0x1::aptos_coin::AptosCoin", // coin type input is accepted
 	CurrencyB:       "0x...",
 	CurrencyAAmount: "1000000",
 	CurrencyBAmount: "990000",

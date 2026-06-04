@@ -25,7 +25,7 @@ requirement explicitly asks for them.
 | `src/modules/poolModule.ts` | `PoolService` | REST reads, create-pool payloads, pool estimate view payloads, and pool math helpers are ported. Live Aptos view execution remains separate. |
 | `src/modules/positionModule.ts` | `PositionService` | REST reads, zero-amount filtering, liquidity payloads, claim payloads, strict remove-recipient validation, and amount-by-liquidity view payload construction are ported. Live view execution remains separate. |
 | `src/modules/rewardModule.ts` | `RewardService` | Reward history, pending reward view payload, and claim payloads are ported. |
-| `src/modules/swapModule.ts` | `SwapService` | Quote methods map to REST. Aggregate composer is isolated because it depends on TS script-composer APIs. |
+| `src/modules/swapModule.ts` | `SwapService` | Quote methods, basic payloads, and swap coin-type to FA metadata conversion are ported. Aggregate composer is isolated because it depends on TS script-composer APIs. |
 | `src/utils/index.ts` | shared utility functions/constants | Tick complement, fee tier config, slippage helpers, price/tick conversion, and pool deadline helpers are implemented. |
 | `src/helper/aggregateSwap/*` | aggregate route types/helper | Route fetch can be ported directly. Transaction script composition needs a Go composer strategy. |
 
@@ -67,10 +67,11 @@ requirement explicitly asks for them.
 - Add live Aptos view execution for pool and position view payloads, tracked by
   #13. The current SDK builds parity view payloads but does not submit them to a
   fullnode.
-- Decide how closely to emulate `aptos-tool` token-pair selection. The current
-  working assumption is `::` means a coin type; plain `0x...` means a fungible
-  asset metadata address. Swap payload builders currently reject coin types
-  because the upstream SDK converts coin types to fungible asset metadata before
-  building arguments, and the Go port does not yet include that conversion.
+- Basic swap payloads emulate `aptos-tool` token-pair selection and
+  `Token.faTypeCalculate()`: `address::module::name` values are treated as coin
+  types, APT maps to `0xa`, and other coin types derive FA metadata with Aptos
+  `createObjectAddress(0xa, shortCoinTypeBytes)`. Partnership swap payloads keep
+  raw coin type arguments because the upstream TypeScript SDK does not apply the
+  FA conversion in that builder.
 - Replace `JSONMap` REST returns with stronger response structs if upstream API
   schemas become available.

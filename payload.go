@@ -392,8 +392,13 @@ func (s *SwapService) SwapTransactionPayload(args SwapTransactionPayloadArgs) (E
 	if err := CheckCurrencyPair(args.CurrencyA, args.CurrencyB); err != nil {
 		return EntryFunctionPayload{}, err
 	}
-	if isCoinType(args.CurrencyA) || isCoinType(args.CurrencyB) {
-		return EntryFunctionPayload{}, errors.New("swap payload coin type to fungible asset conversion is not implemented")
+	argumentCurrencyA, err := swapArgumentAddress(args.CurrencyA)
+	if err != nil {
+		return EntryFunctionPayload{}, err
+	}
+	argumentCurrencyB, err := swapArgumentAddress(args.CurrencyB)
+	if err != nil {
+		return EntryFunctionPayload{}, err
 	}
 	slippage := normalizeSlippage(args.Slippage)
 	if err := CheckSlippage(slippage); err != nil {
@@ -404,7 +409,7 @@ func (s *SwapService) SwapTransactionPayload(args SwapTransactionPayloadArgs) (E
 		return EntryFunctionPayload{}, err
 	}
 
-	params := []any{args.PoolRoute, args.CurrencyA, args.CurrencyB, args.CurrencyAAmount, amountB, args.Recipient}
+	params := []any{args.PoolRoute, argumentCurrencyA, argumentCurrencyB, args.CurrencyAAmount, amountB, args.Recipient}
 	contract := s.client.Options.ContractAddress
 	return selectTokenPairPayload(args.CurrencyA, args.CurrencyB, []EntryFunctionPayload{
 		{
@@ -434,9 +439,6 @@ func (s *SwapService) SwapTransactionPayload(args SwapTransactionPayloadArgs) (E
 func (s *SwapService) SwapWithPartnershipTransactionPayload(args SwapWithPartnershipTransactionPayloadArgs) (EntryFunctionPayload, error) {
 	if err := CheckCurrencyPair(args.CurrencyA, args.CurrencyB); err != nil {
 		return EntryFunctionPayload{}, err
-	}
-	if isCoinType(args.CurrencyA) || isCoinType(args.CurrencyB) {
-		return EntryFunctionPayload{}, errors.New("swap payload coin type to fungible asset conversion is not implemented")
 	}
 	slippage := normalizeSlippage(args.Slippage)
 	if err := CheckSlippage(slippage); err != nil {
@@ -483,7 +485,7 @@ func selectTokenPairPayload(currencyA, currencyB string, variants []EntryFunctio
 }
 
 func isCoinType(currency string) bool {
-	return strings.Contains(currency, "::")
+	return len(strings.Split(currency, "::")) >= 3
 }
 
 func isStrictAccountAddress(address string) bool {

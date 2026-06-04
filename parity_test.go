@@ -55,6 +55,20 @@ func TestParityGoldenPayloads(t *testing.T) {
 		t.Fatalf("SwapTransactionPayload returned error: %v", err)
 	}
 	assertGoldenJSON(t, "testdata/parity/payloads/swap_fa_to_fa.json", normalizePayloadSnapshot(swap))
+
+	swapCoin, err := sdk.Swap.SwapTransactionPayload(SwapTransactionPayloadArgs{
+		CurrencyA:       aptosCoinType,
+		CurrencyB:       exampleCoinType,
+		CurrencyAAmount: "1000",
+		CurrencyBAmount: "1000",
+		Slippage:        "0.5",
+		PoolRoute:       []string{"pool-1"},
+		Recipient:       "0xabc",
+	})
+	if err != nil {
+		t.Fatalf("SwapTransactionPayload coin route returned error: %v", err)
+	}
+	assertGoldenJSON(t, "testdata/parity/payloads/swap_coin_to_coin.json", normalizePayloadSnapshot(swapCoin))
 }
 
 func TestParityGoldenAdditionalPayloads(t *testing.T) {
