@@ -4,6 +4,8 @@ This document tracks the migration from the upstream TypeScript SDK at
 `Hyperionxyz/hyperion-sdk/packages/sdk` to the Go module
 `github.com/yunyu950908/hyperion-sdk-go`.
 
+For user-facing migration guidance, see [migration.md](migration.md).
+
 ## Upstream Snapshot
 
 - Package: `@hyperionxyz/sdk`
@@ -84,7 +86,7 @@ Service wrappers currently return `[]any` so the SDK does not commit to unstable
 business response schemas. Payload-builder methods remain available for offline
 parity checks, signing flows, and custom executor adapters.
 
-## Open Design Items
+## Future Extensions
 
 - Add a submit-ready Aptos Go SDK adapter for `AggregateSwapComposer` if a
   production integration requires direct transaction serialization. The current

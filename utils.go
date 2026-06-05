@@ -27,11 +27,17 @@ const (
 type FeeTierIndex int
 
 const (
-	FeeTier001Spacing1  FeeTierIndex = 0
-	FeeTier005Spacing5  FeeTierIndex = 1
-	FeeTier03Spacing60  FeeTierIndex = 2
-	FeeTier1Spacing200  FeeTierIndex = 3
-	FeeTier01Spacing20  FeeTierIndex = 4
+	// FeeTier001Spacing1 identifies the 0.01% fee tier with tick spacing 1.
+	FeeTier001Spacing1 FeeTierIndex = 0
+	// FeeTier005Spacing5 identifies the 0.05% fee tier label 5 with tick spacing 10.
+	FeeTier005Spacing5 FeeTierIndex = 1
+	// FeeTier03Spacing60 identifies the 0.3% fee tier with tick spacing 60.
+	FeeTier03Spacing60 FeeTierIndex = 2
+	// FeeTier1Spacing200 identifies the 1% fee tier with tick spacing 200.
+	FeeTier1Spacing200 FeeTierIndex = 3
+	// FeeTier01Spacing20 identifies the 0.1% fee tier with tick spacing 20.
+	FeeTier01Spacing20 FeeTierIndex = 4
+	// FeeTier025Spacing50 identifies the 0.25% fee tier with tick spacing 50.
 	FeeTier025Spacing50 FeeTierIndex = 5
 )
 
