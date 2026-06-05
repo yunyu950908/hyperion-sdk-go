@@ -57,6 +57,19 @@ func main() {
 }
 ```
 
+## Examples
+
+The examples are numbered as a suggested learning path:
+
+| Step | Example | Focus |
+| --- | --- | --- |
+| 001 | [examples/001_init](examples/001_init/main.go) | SDK initialization and network defaults |
+| 002 | [examples/002_payloads](examples/002_payloads/main.go) | Offline transaction payload builders |
+| 003 | [examples/003_read_pools](examples/003_read_pools/main.go) | Hyperion REST pool reads |
+| 004 | [examples/004_swap_quote](examples/004_swap_quote/main.go) | Swap quote requests |
+| 005 | [examples/005_view](examples/005_view/main.go) | Aptos view calls through `ViewExecutor` |
+| 006 | [examples/006_aggregate_composer](examples/006_aggregate_composer/main.go) | Aggregate swap composer recording |
+
 ## Initialization
 
 Use `Init` for the built-in Hyperion mainnet/testnet defaults:
@@ -94,7 +107,7 @@ positions, err := sdk.Position.FetchAllPositionsByAddress(ctx, "0xowner")
 rewards, err := sdk.Reward.FetchRewardHistory(ctx, "position-id", "0xowner")
 ```
 
-See [examples/read_pools](examples/read_pools/main.go) for a compile-checked
+See [examples/003_read_pools](examples/003_read_pools/main.go) for a compile-checked
 read example.
 
 ## Swap Quotes
@@ -108,7 +121,7 @@ quote, err := sdk.Swap.EstFromAmount(ctx, hyperion.EstimateAmountArgs{
 })
 ```
 
-See [examples/swap_quote](examples/swap_quote/main.go).
+See [examples/004_swap_quote](examples/004_swap_quote/main.go).
 
 ## Payload Builders
 
@@ -128,7 +141,7 @@ payload, err := sdk.Swap.SwapTransactionPayload(hyperion.SwapTransactionPayloadA
 })
 ```
 
-See [examples/payloads](examples/payloads/main.go).
+See [examples/002_payloads](examples/002_payloads/main.go).
 
 ## Aptos View Calls
 
@@ -160,7 +173,7 @@ values, err := sdk.Pool.EstCurrencyAAmountFromB(ctx, hyperion.EstCurrencyAAmount
 field names for parity snapshots. The REST view executor converts it to Aptos
 fullnode request fields: `function`, `type_arguments`, and `arguments`.
 
-See [examples/view](examples/view/main.go). The example only executes when
+See [examples/005_view](examples/005_view/main.go). The example only executes when
 `APTOS_FULLNODE_URL`, `HYPERION_VIEW_CURRENCY_A`, and
 `HYPERION_VIEW_CURRENCY_B` are set.
 
@@ -182,7 +195,7 @@ err := sdk.Swap.GenerateAggregateSwapTransactionScript(hyperion.GenerateAggregat
 })
 ```
 
-See [examples/aggregate_composer](examples/aggregate_composer/main.go).
+See [examples/006_aggregate_composer](examples/006_aggregate_composer/main.go).
 
 ## Testing
 
