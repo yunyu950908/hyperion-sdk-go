@@ -26,6 +26,12 @@ import (
 //	export HYPERION_VIEW_CURRENCY_A=0x05fabd1b12e39967a3c24e91b7b8f67719a6dacee74f3c8b9fb7d93e855437d2 # USD1
 //	export HYPERION_VIEW_CURRENCY_B=0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b   # USDC
 //	go run ./examples/005_view
+//
+// APTOS_API_KEY is optional for public fullnodes that allow anonymous access.
+// When set, the SDK sends it as `Authorization: Bearer <key>` on the Aptos
+// fullnode request. It does not sign transactions or change the view result; it
+// is mainly for provider auth, higher/stable rate limits, usage tracking,
+// billing, and revocation when a node provider requires or recommends a key.
 const exampleEnv = `set APTOS_FULLNODE_URL, HYPERION_VIEW_CURRENCY_A, and HYPERION_VIEW_CURRENCY_B to execute a live Aptos view call
 
 Example:
@@ -44,6 +50,11 @@ Optional pool-estimate overrides for another pool:
 
 HYPERION_VIEW_CURRENCY_B_AMOUNT is a base-unit amount. For 6-decimal tokens,
 1000 means 0.001 token.
+
+APTOS_API_KEY is optional for public fullnodes that allow anonymous access. If
+set, the SDK sends it as Authorization: Bearer <key>. It does not sign
+transactions or change the view result; it is mainly for provider auth,
+higher/stable rate limits, usage tracking, billing, and key revocation.
 `
 
 const (
