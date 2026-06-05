@@ -100,6 +100,10 @@ type EstCurrencyBAmountFromAArgs struct {
 
 // EstCurrencyAAmountFromBPayload builds the view payload for estimating token A from token B.
 func (p *PoolService) EstCurrencyAAmountFromBPayload(args EstCurrencyAAmountFromBArgs) (EntryFunctionPayload, error) {
+	feeTierIndex, err := parseUint8(args.FeeTierIndex)
+	if err != nil {
+		return EntryFunctionPayload{}, err
+	}
 	tickLower, tickUpper, currentPriceTick, err := parseEstimateTicks(poolEstAmountArgs{
 		CurrencyA:        args.CurrencyA,
 		CurrencyB:        args.CurrencyB,
@@ -120,16 +124,20 @@ func (p *PoolService) EstCurrencyAAmountFromBPayload(args EstCurrencyAAmountFrom
 			TickComplement(currentPriceTick),
 			args.CurrencyA,
 			args.CurrencyB,
-			args.FeeTierIndex,
+			feeTierIndex,
 			args.CurrencyBAmount,
-			0,
-			0,
+			"0",
+			"0",
 		},
 	}, nil
 }
 
 // EstCurrencyBAmountFromAPayload builds the view payload for estimating token B from token A.
 func (p *PoolService) EstCurrencyBAmountFromAPayload(args EstCurrencyBAmountFromAArgs) (EntryFunctionPayload, error) {
+	feeTierIndex, err := parseUint8(args.FeeTierIndex)
+	if err != nil {
+		return EntryFunctionPayload{}, err
+	}
 	tickLower, tickUpper, currentPriceTick, err := parseEstimateTicks(poolEstAmountArgs{
 		CurrencyA:        args.CurrencyA,
 		CurrencyB:        args.CurrencyB,
@@ -150,10 +158,10 @@ func (p *PoolService) EstCurrencyBAmountFromAPayload(args EstCurrencyBAmountFrom
 			TickComplement(currentPriceTick),
 			args.CurrencyA,
 			args.CurrencyB,
-			args.FeeTierIndex,
+			feeTierIndex,
 			args.CurrencyAAmount,
-			0,
-			0,
+			"0",
+			"0",
 		},
 	}, nil
 }
@@ -536,6 +544,14 @@ func roundDecimalString(value string) (string, error) {
 
 func parseInt64(value string) (int64, error) {
 	return strconv.ParseInt(value, 10, 64)
+}
+
+func parseUint8(value string) (uint8, error) {
+	parsed, err := strconv.ParseUint(value, 10, 8)
+	if err != nil {
+		return 0, err
+	}
+	return uint8(parsed), nil
 }
 
 func parseEstimateTicks(args poolEstAmountArgs) (int64, int64, int64, error) {
