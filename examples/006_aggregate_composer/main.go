@@ -7,6 +7,16 @@ import (
 	hyperion "github.com/yunyu950908/hyperion-sdk-go"
 )
 
+// This example demonstrates the aggregate swap composer boundary.
+//
+// It does not fetch a live quote, call an Aptos fullnode, sign a transaction,
+// or submit anything on-chain. Instead, it builds a small in-memory aggregate
+// route and passes it to GenerateAggregateSwapTransactionScript with an
+// AggregateSwapRecorder.
+//
+// The recorder is useful for tests, audits, and future transaction-builder
+// adapters: it captures the ordered batched calls that a real Aptos composer
+// adapter would need to turn into a submit-ready transaction.
 func main() {
 	sdk, err := hyperion.Init(hyperion.InitOptions{
 		Network: hyperion.NetworkMainnet,
@@ -52,4 +62,5 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Printf("recorded %d aggregate composer calls\n", len(recorder.Calls))
+	fmt.Println("this is an offline call plan only; it is not a submitted Aptos transaction")
 }
