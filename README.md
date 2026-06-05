@@ -175,12 +175,13 @@ fullnode request fields: `function`, `type_arguments`, and `arguments`.
 Default tests do not require live network access or credentials.
 
 ```bash
+make verify
 go test ./...
 go vet ./...
 ```
 
 See [docs/testing.md](docs/testing.md) for the coverage matrix, parity fixture
-layout, and integration test plan.
+layout, `make` targets, and opt-in integration test plan.
 
 ## Design Notes
 
