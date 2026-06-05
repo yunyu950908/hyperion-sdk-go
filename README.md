@@ -69,6 +69,9 @@ The examples are numbered as a suggested learning path:
 | 004 | [examples/004_swap_quote](examples/004_swap_quote/main.go) | Swap quote requests |
 | 005 | [examples/005_view](examples/005_view/main.go) | Aptos view calls through `ViewExecutor` |
 | 006 | [examples/006_aggregate_composer](examples/006_aggregate_composer/main.go) | Aggregate swap composer recording |
+| 007 | [examples/007_swap_payload_from_quote](examples/007_swap_payload_from_quote/main.go) | Build an unsigned normal swap payload from a live quote path |
+| 008 | [examples/008_live_aggregate_route_to_composer](examples/008_live_aggregate_route_to_composer/main.go) | Convert a live aggregate route into an offline composer call plan |
+| 009 | [examples/009_position_liquidity_payloads](examples/009_position_liquidity_payloads/main.go) | Build position and liquidity payloads without submitting transactions |
 
 ## Initialization
 
@@ -185,7 +188,8 @@ provides an `AggregateSwapComposer` interface and a built-in
 
 The recorder mirrors the upstream TypeScript SDK's batched-call order for tests,
 audits, and future adapter development. It does not serialize submit-ready Aptos
-transaction bytes.
+transaction bytes; a submit-ready aggregate transaction adapter remains a future
+extension.
 
 ```go
 recorder := hyperion.NewAggregateSwapRecorder()
@@ -196,6 +200,9 @@ err := sdk.Swap.GenerateAggregateSwapTransactionScript(hyperion.GenerateAggregat
 ```
 
 See [examples/006_aggregate_composer](examples/006_aggregate_composer/main.go).
+
+See [examples/008_live_aggregate_route_to_composer](examples/008_live_aggregate_route_to_composer/main.go)
+for the full route-fetch to recorder flow.
 
 ## Testing
 
