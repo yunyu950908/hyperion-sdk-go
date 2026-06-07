@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 )
 
 // PositionTokenAmounts is router_v3::get_amount_by_liquidity decoded output.
@@ -142,6 +143,77 @@ type PoolAmountInArgs struct {
 type PoolQuoteResult struct {
 	Amount    string `json:"amount"`
 	FeeAmount string `json:"feeAmount"`
+}
+
+// PricePreviewArgs configures price_hub::get_price_preview.
+type PricePreviewArgs struct {
+	Asset  string
+	Amount string
+}
+
+// PricePreview is price_hub::get_price_preview decoded output. The contract
+// returns two source values without naming them, so the SDK preserves their
+// positional meaning.
+type PricePreview struct {
+	First  string `json:"first"`
+	Second string `json:"second"`
+}
+
+// AggPrice is price_hub::AggPrice decoded output.
+type AggPrice struct {
+	Price     string `json:"price"`
+	Precision string `json:"precision"`
+}
+
+// PriceSourceComparison is price_hub::compare_two_source decoded output.
+type PriceSourceComparison struct {
+	First  AggPrice `json:"first"`
+	Second AggPrice `json:"second"`
+}
+
+// RateLimitStatus is a remain/capacity/interval limiter tuple decoded from
+// rate_limiter_check views. Values are raw on-chain integers.
+type RateLimitStatus struct {
+	Remain   string `json:"remain"`
+	Capacity string `json:"capacity"`
+	Interval string `json:"interval"`
+}
+
+// AssetRateLimitStatus is rate_limiter_check::LimiterNumber decoded output.
+type AssetRateLimitStatus struct {
+	Asset    string `json:"asset"`
+	Remain   string `json:"remain"`
+	Capacity string `json:"capacity"`
+	Interval string `json:"interval"`
+}
+
+// UserAssetRateLimiterArgs configures rate_limiter_check::user_asset_rate_limiter.
+type UserAssetRateLimiterArgs struct {
+	User  string
+	Asset string
+}
+
+// UserAssetRateLimiterBatchArgs configures rate_limiter_check::user_asset_rate_limiter_batch.
+type UserAssetRateLimiterBatchArgs struct {
+	User   string
+	Assets []string
+}
+
+// PoolUPriceLimiterStatus is rate_limiter_check pool u-price limiter output.
+type PoolUPriceLimiterStatus struct {
+	Exists   bool   `json:"exists"`
+	Remain   string `json:"remain"`
+	Capacity string `json:"capacity"`
+	Interval string `json:"interval"`
+}
+
+// GlobalUPriceLimiterStatus is rate_limiter_check::global_u_price_limiter decoded output.
+type GlobalUPriceLimiterStatus struct {
+	Exists   bool     `json:"exists"`
+	Remain   string   `json:"remain"`
+	Capacity string   `json:"capacity"`
+	Interval string   `json:"interval"`
+	Assets   []string `json:"assets"`
 }
 
 func (p *PositionService) PendingFeesPayload(positionID string) EntryFunctionPayload {
@@ -319,6 +391,162 @@ func (p *PoolService) PoolAmountInPayload(args PoolAmountInArgs) (EntryFunctionP
 		TypeArguments:     []string{},
 		FunctionArguments: []any{args.PoolID, args.TokenOut, args.AmountOut},
 	}, nil
+}
+
+func (p *PriceHubService) PricePreviewPayload(args PricePreviewArgs) (EntryFunctionPayload, error) {
+	if err := requireMetadataAddress("asset", args.Asset); err != nil {
+		return EntryFunctionPayload{}, err
+	}
+	if err := requireRawIntegerString("amount", args.Amount); err != nil {
+		return EntryFunctionPayload{}, err
+	}
+	return EntryFunctionPayload{
+		Function:          p.client.Options.ContractAddress + "::price_hub::get_price_preview",
+		TypeArguments:     []string{},
+		FunctionArguments: []any{args.Asset, args.Amount},
+	}, nil
+}
+
+func (p *PriceHubService) PriceSourceComparisonPayload(asset string) (EntryFunctionPayload, error) {
+	if err := requireMetadataAddress("asset", asset); err != nil {
+		return EntryFunctionPayload{}, err
+	}
+	return EntryFunctionPayload{
+		Function:          p.client.Options.ContractAddress + "::price_hub::compare_two_source",
+		TypeArguments:     []string{},
+		FunctionArguments: []any{asset},
+	}, nil
+}
+
+func (p *PriceHubService) IsTokenInPriceHubPayload(asset string) (EntryFunctionPayload, error) {
+	if err := requireMetadataAddress("asset", asset); err != nil {
+		return EntryFunctionPayload{}, err
+	}
+	return EntryFunctionPayload{
+		Function:          p.client.Options.ContractAddress + "::price_hub::is_token_in_hub",
+		TypeArguments:     []string{},
+		FunctionArguments: []any{asset},
+	}, nil
+}
+
+func (p *PriceHubService) TokenInHubListPayload() EntryFunctionPayload {
+	return EntryFunctionPayload{
+		Function:          p.client.Options.ContractAddress + "::price_hub::token_in_hub_list",
+		TypeArguments:     []string{},
+		FunctionArguments: []any{},
+	}
+}
+
+func (p *PriceHubService) PriceHubFeedSourcePayload() EntryFunctionPayload {
+	return EntryFunctionPayload{
+		Function:          p.client.Options.ContractAddress + "::price_hub::feed_source",
+		TypeArguments:     []string{},
+		FunctionArguments: []any{},
+	}
+}
+
+func (r *RateLimiterService) GlobalAssetRateLimiterPayload(asset string) (EntryFunctionPayload, error) {
+	if err := requireMetadataAddress("asset", asset); err != nil {
+		return EntryFunctionPayload{}, err
+	}
+	return EntryFunctionPayload{
+		Function:          r.client.Options.ContractAddress + "::rate_limiter_check::global_asset_rate_limiter",
+		TypeArguments:     []string{},
+		FunctionArguments: []any{asset},
+	}, nil
+}
+
+func (r *RateLimiterService) GlobalAssetRateLimiterBatchPayload(assets []string) (EntryFunctionPayload, error) {
+	if err := requireMetadataAddressVector("assets", assets); err != nil {
+		return EntryFunctionPayload{}, err
+	}
+	return EntryFunctionPayload{
+		Function:          r.client.Options.ContractAddress + "::rate_limiter_check::global_asset_rate_limiter_batch",
+		TypeArguments:     []string{},
+		FunctionArguments: []any{assets},
+	}, nil
+}
+
+func (r *RateLimiterService) UserAssetRateLimiterPayload(args UserAssetRateLimiterArgs) (EntryFunctionPayload, error) {
+	if err := requireAddressLike("user", args.User); err != nil {
+		return EntryFunctionPayload{}, err
+	}
+	if err := requireMetadataAddress("asset", args.Asset); err != nil {
+		return EntryFunctionPayload{}, err
+	}
+	return EntryFunctionPayload{
+		Function:          r.client.Options.ContractAddress + "::rate_limiter_check::user_asset_rate_limiter",
+		TypeArguments:     []string{},
+		FunctionArguments: []any{args.User, args.Asset},
+	}, nil
+}
+
+func (r *RateLimiterService) UserAssetRateLimiterBatchPayload(args UserAssetRateLimiterBatchArgs) (EntryFunctionPayload, error) {
+	if err := requireAddressLike("user", args.User); err != nil {
+		return EntryFunctionPayload{}, err
+	}
+	if err := requireMetadataAddressVector("assets", args.Assets); err != nil {
+		return EntryFunctionPayload{}, err
+	}
+	return EntryFunctionPayload{
+		Function:          r.client.Options.ContractAddress + "::rate_limiter_check::user_asset_rate_limiter_batch",
+		TypeArguments:     []string{},
+		FunctionArguments: []any{args.User, args.Assets},
+	}, nil
+}
+
+func (r *RateLimiterService) PoolUPriceLimiterPayload(pool string) (EntryFunctionPayload, error) {
+	if err := requireAddressLike("pool", pool); err != nil {
+		return EntryFunctionPayload{}, err
+	}
+	return EntryFunctionPayload{
+		Function:          r.client.Options.ContractAddress + "::rate_limiter_check::pool_u_price_limiter",
+		TypeArguments:     []string{},
+		FunctionArguments: []any{pool},
+	}, nil
+}
+
+func (r *RateLimiterService) PoolUPriceLimiterBatchPayload(pools []string) (EntryFunctionPayload, error) {
+	if err := requireAddressLikeVector("pools", pools); err != nil {
+		return EntryFunctionPayload{}, err
+	}
+	return EntryFunctionPayload{
+		Function:          r.client.Options.ContractAddress + "::rate_limiter_check::pool_u_price_limiter_batch",
+		TypeArguments:     []string{},
+		FunctionArguments: []any{pools},
+	}, nil
+}
+
+func (r *RateLimiterService) GlobalUPriceLimiterPayload() EntryFunctionPayload {
+	return EntryFunctionPayload{
+		Function:          r.client.Options.ContractAddress + "::rate_limiter_check::global_u_price_limiter",
+		TypeArguments:     []string{},
+		FunctionArguments: []any{},
+	}
+}
+
+func (c *CoinWrapperService) IsWrapperPayload(asset string) (EntryFunctionPayload, error) {
+	return c.coinWrapperAssetPayload("is_wrapper", asset)
+}
+
+func (c *CoinWrapperService) OriginalAssetPayload(asset string) (EntryFunctionPayload, error) {
+	return c.coinWrapperAssetPayload("get_original", asset)
+}
+
+func (c *CoinWrapperService) CoinTypePayload(asset string) (EntryFunctionPayload, error) {
+	return c.coinWrapperAssetPayload("get_coin_type", asset)
+}
+
+func (c *CoinWrapperService) FormattedFungibleAssetPayload(asset string) (EntryFunctionPayload, error) {
+	return c.coinWrapperAssetPayload("format_fungible_asset", asset)
+}
+
+func (c *CoinWrapperService) CoinWrapperSupportedPayload() EntryFunctionPayload {
+	return EntryFunctionPayload{
+		Function:          c.client.Options.ContractAddress + "::coin_wrapper::is_supported",
+		TypeArguments:     []string{},
+		FunctionArguments: []any{},
+	}
 }
 
 func (p *PositionService) FetchPositionTokenAmounts(ctx context.Context, positionID string) (PositionTokenAmounts, error) {
@@ -545,6 +773,194 @@ func (p *PoolService) FetchPoolAmountIn(ctx context.Context, args PoolAmountInAr
 	return decodePoolQuoteResult(values)
 }
 
+func (p *PriceHubService) FetchPricePreview(ctx context.Context, args PricePreviewArgs) (PricePreview, error) {
+	payload, err := p.PricePreviewPayload(args)
+	if err != nil {
+		return PricePreview{}, err
+	}
+	values, err := p.client.View(ctx, payload)
+	if err != nil {
+		return PricePreview{}, err
+	}
+	return decodePricePreview(values)
+}
+
+func (p *PriceHubService) FetchPriceSourceComparison(ctx context.Context, asset string) (PriceSourceComparison, error) {
+	payload, err := p.PriceSourceComparisonPayload(asset)
+	if err != nil {
+		return PriceSourceComparison{}, err
+	}
+	values, err := p.client.View(ctx, payload)
+	if err != nil {
+		return PriceSourceComparison{}, err
+	}
+	return decodePriceSourceComparison(values)
+}
+
+func (p *PriceHubService) FetchIsTokenInPriceHub(ctx context.Context, asset string) (bool, error) {
+	payload, err := p.IsTokenInPriceHubPayload(asset)
+	if err != nil {
+		return false, err
+	}
+	values, err := p.client.View(ctx, payload)
+	if err != nil {
+		return false, err
+	}
+	return decodeSingleBoolResult(values, "token in price hub")
+}
+
+func (p *PriceHubService) FetchTokenInHubList(ctx context.Context) ([]string, error) {
+	values, err := p.client.View(ctx, p.TokenInHubListPayload())
+	if err != nil {
+		return nil, err
+	}
+	return decodeObjectAddressVectorResult(values, "token in hub list")
+}
+
+func (p *PriceHubService) FetchPriceHubFeedSource(ctx context.Context) (string, error) {
+	values, err := p.client.View(ctx, p.PriceHubFeedSourcePayload())
+	if err != nil {
+		return "", err
+	}
+	return decodeSingleStringResult(values, "price hub feed source")
+}
+
+func (r *RateLimiterService) FetchGlobalAssetRateLimiter(ctx context.Context, asset string) (RateLimitStatus, error) {
+	payload, err := r.GlobalAssetRateLimiterPayload(asset)
+	if err != nil {
+		return RateLimitStatus{}, err
+	}
+	values, err := r.client.View(ctx, payload)
+	if err != nil {
+		return RateLimitStatus{}, err
+	}
+	return decodeRateLimitStatusResult(values, "global asset rate limiter")
+}
+
+func (r *RateLimiterService) FetchGlobalAssetRateLimiterBatch(ctx context.Context, assets []string) ([]AssetRateLimitStatus, error) {
+	payload, err := r.GlobalAssetRateLimiterBatchPayload(assets)
+	if err != nil {
+		return nil, err
+	}
+	values, err := r.client.View(ctx, payload)
+	if err != nil {
+		return nil, err
+	}
+	return decodeAssetRateLimitStatusVector(values, "global asset rate limiter batch")
+}
+
+func (r *RateLimiterService) FetchUserAssetRateLimiter(ctx context.Context, args UserAssetRateLimiterArgs) (RateLimitStatus, error) {
+	payload, err := r.UserAssetRateLimiterPayload(args)
+	if err != nil {
+		return RateLimitStatus{}, err
+	}
+	values, err := r.client.View(ctx, payload)
+	if err != nil {
+		return RateLimitStatus{}, err
+	}
+	return decodeRateLimitStatusResult(values, "user asset rate limiter")
+}
+
+func (r *RateLimiterService) FetchUserAssetRateLimiterBatch(ctx context.Context, args UserAssetRateLimiterBatchArgs) ([]AssetRateLimitStatus, error) {
+	payload, err := r.UserAssetRateLimiterBatchPayload(args)
+	if err != nil {
+		return nil, err
+	}
+	values, err := r.client.View(ctx, payload)
+	if err != nil {
+		return nil, err
+	}
+	return decodeAssetRateLimitStatusVector(values, "user asset rate limiter batch")
+}
+
+func (r *RateLimiterService) FetchPoolUPriceLimiter(ctx context.Context, pool string) (PoolUPriceLimiterStatus, error) {
+	payload, err := r.PoolUPriceLimiterPayload(pool)
+	if err != nil {
+		return PoolUPriceLimiterStatus{}, err
+	}
+	values, err := r.client.View(ctx, payload)
+	if err != nil {
+		return PoolUPriceLimiterStatus{}, err
+	}
+	return decodePoolUPriceLimiterStatusResult(values, "pool u price limiter")
+}
+
+func (r *RateLimiterService) FetchPoolUPriceLimiterBatch(ctx context.Context, pools []string) ([]PoolUPriceLimiterStatus, error) {
+	payload, err := r.PoolUPriceLimiterBatchPayload(pools)
+	if err != nil {
+		return nil, err
+	}
+	values, err := r.client.View(ctx, payload)
+	if err != nil {
+		return nil, err
+	}
+	return decodePoolUPriceLimiterStatusVector(values, "pool u price limiter batch")
+}
+
+func (r *RateLimiterService) FetchGlobalUPriceLimiter(ctx context.Context) (GlobalUPriceLimiterStatus, error) {
+	values, err := r.client.View(ctx, r.GlobalUPriceLimiterPayload())
+	if err != nil {
+		return GlobalUPriceLimiterStatus{}, err
+	}
+	return decodeGlobalUPriceLimiterStatus(values)
+}
+
+func (c *CoinWrapperService) FetchIsWrapper(ctx context.Context, asset string) (bool, error) {
+	payload, err := c.IsWrapperPayload(asset)
+	if err != nil {
+		return false, err
+	}
+	values, err := c.client.View(ctx, payload)
+	if err != nil {
+		return false, err
+	}
+	return decodeSingleBoolResult(values, "is wrapper")
+}
+
+func (c *CoinWrapperService) FetchOriginalAsset(ctx context.Context, asset string) (string, error) {
+	payload, err := c.OriginalAssetPayload(asset)
+	if err != nil {
+		return "", err
+	}
+	values, err := c.client.View(ctx, payload)
+	if err != nil {
+		return "", err
+	}
+	return decodeSingleStringResult(values, "original asset")
+}
+
+func (c *CoinWrapperService) FetchCoinType(ctx context.Context, asset string) (string, error) {
+	payload, err := c.CoinTypePayload(asset)
+	if err != nil {
+		return "", err
+	}
+	values, err := c.client.View(ctx, payload)
+	if err != nil {
+		return "", err
+	}
+	return decodeSingleStringResult(values, "coin type")
+}
+
+func (c *CoinWrapperService) FetchFormattedFungibleAsset(ctx context.Context, asset string) (string, error) {
+	payload, err := c.FormattedFungibleAssetPayload(asset)
+	if err != nil {
+		return "", err
+	}
+	values, err := c.client.View(ctx, payload)
+	if err != nil {
+		return "", err
+	}
+	return decodeSingleStringResult(values, "formatted fungible asset")
+}
+
+func (c *CoinWrapperService) FetchCoinWrapperSupported(ctx context.Context) (bool, error) {
+	values, err := c.client.View(ctx, c.CoinWrapperSupportedPayload())
+	if err != nil {
+		return false, err
+	}
+	return decodeSingleBoolResult(values, "coin wrapper supported")
+}
+
 func (p *PoolService) poolTokenPairPayload(function string, args PoolTokenPairArgs) (EntryFunctionPayload, error) {
 	if err := requireMetadataPair(args.CurrencyA, args.CurrencyB); err != nil {
 		return EntryFunctionPayload{}, err
@@ -568,6 +984,17 @@ func (p *PoolService) poolObjectPayload(function, poolID string) EntryFunctionPa
 	}
 }
 
+func (c *CoinWrapperService) coinWrapperAssetPayload(function, asset string) (EntryFunctionPayload, error) {
+	if err := requireMetadataAddress("asset", asset); err != nil {
+		return EntryFunctionPayload{}, err
+	}
+	return EntryFunctionPayload{
+		Function:          c.client.Options.ContractAddress + "::coin_wrapper::" + function,
+		TypeArguments:     []string{},
+		FunctionArguments: []any{asset},
+	}, nil
+}
+
 func requireBatchQuoteArgs(route []string, amount, tokenIn, tokenOut, amountName string) error {
 	if len(route) == 0 {
 		return errors.New("poolRoute is required")
@@ -589,6 +1016,40 @@ func requirePoolQuoteArgs(poolID, token, amount, tokenName, amountName string) e
 		return err
 	}
 	return requireRawIntegerString(amountName, amount)
+}
+
+func requireMetadataAddressVector(name string, values []string) error {
+	if len(values) == 0 {
+		return errors.New(name + " is required")
+	}
+	for i, value := range values {
+		if err := requireMetadataAddress(fmt.Sprintf("%s[%d]", name, i), value); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func requireAddressLikeVector(name string, values []string) error {
+	if len(values) == 0 {
+		return errors.New(name + " is required")
+	}
+	for i, value := range values {
+		if err := requireAddressLike(fmt.Sprintf("%s[%d]", name, i), value); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func requireAddressLike(name, value string) error {
+	if err := requireNonEmpty(name, value); err != nil {
+		return err
+	}
+	if !strings.HasPrefix(value, "0x") || isCoinType(value) {
+		return errors.New(name + " must be an Aptos address")
+	}
+	return nil
 }
 
 func decodePositionTokenAmounts(values []any) (PositionTokenAmounts, error) {
@@ -797,6 +1258,103 @@ func decodePoolQuoteResult(values []any) (PoolQuoteResult, error) {
 	return PoolQuoteResult{Amount: amount, FeeAmount: fee}, nil
 }
 
+func decodePricePreview(values []any) (PricePreview, error) {
+	if err := requireViewLen(values, 2, "price preview"); err != nil {
+		return PricePreview{}, err
+	}
+	first, err := viewString(values[0], "price preview first")
+	if err != nil {
+		return PricePreview{}, err
+	}
+	second, err := viewString(values[1], "price preview second")
+	if err != nil {
+		return PricePreview{}, err
+	}
+	return PricePreview{First: first, Second: second}, nil
+}
+
+func decodePriceSourceComparison(values []any) (PriceSourceComparison, error) {
+	if err := requireViewLen(values, 2, "price source comparison"); err != nil {
+		return PriceSourceComparison{}, err
+	}
+	first, err := viewAggPrice(values[0], "price source comparison first")
+	if err != nil {
+		return PriceSourceComparison{}, err
+	}
+	second, err := viewAggPrice(values[1], "price source comparison second")
+	if err != nil {
+		return PriceSourceComparison{}, err
+	}
+	return PriceSourceComparison{First: first, Second: second}, nil
+}
+
+func decodeRateLimitStatusResult(values []any, name string) (RateLimitStatus, error) {
+	if err := requireViewLen(values, 3, name); err != nil {
+		return RateLimitStatus{}, err
+	}
+	return viewRateLimitStatus(values[0], values[1], values[2], name)
+}
+
+func decodeAssetRateLimitStatusVector(values []any, name string) ([]AssetRateLimitStatus, error) {
+	items, err := viewVectorResult(values, name)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]AssetRateLimitStatus, 0, len(items))
+	for i, item := range items {
+		decoded, err := viewAssetRateLimitStatus(item, fmt.Sprintf("%s[%d]", name, i))
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, decoded)
+	}
+	return out, nil
+}
+
+func decodePoolUPriceLimiterStatusResult(values []any, name string) (PoolUPriceLimiterStatus, error) {
+	if err := requireViewLen(values, 4, name); err != nil {
+		return PoolUPriceLimiterStatus{}, err
+	}
+	return viewPoolUPriceLimiterStatus(values[0], values[1], values[2], values[3], name)
+}
+
+func decodePoolUPriceLimiterStatusVector(values []any, name string) ([]PoolUPriceLimiterStatus, error) {
+	items, err := viewVectorResult(values, name)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]PoolUPriceLimiterStatus, 0, len(items))
+	for i, item := range items {
+		decoded, err := viewPoolUPriceLimiterStatusObject(item, fmt.Sprintf("%s[%d]", name, i))
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, decoded)
+	}
+	return out, nil
+}
+
+func decodeGlobalUPriceLimiterStatus(values []any) (GlobalUPriceLimiterStatus, error) {
+	if err := requireViewLen(values, 5, "global u price limiter"); err != nil {
+		return GlobalUPriceLimiterStatus{}, err
+	}
+	status, err := viewPoolUPriceLimiterStatus(values[0], values[1], values[2], values[3], "global u price limiter")
+	if err != nil {
+		return GlobalUPriceLimiterStatus{}, err
+	}
+	assets, err := viewObjectAddressVector(values[4], "global u price limiter assets")
+	if err != nil {
+		return GlobalUPriceLimiterStatus{}, err
+	}
+	return GlobalUPriceLimiterStatus{
+		Exists:   status.Exists,
+		Remain:   status.Remain,
+		Capacity: status.Capacity,
+		Interval: status.Interval,
+		Assets:   assets,
+	}, nil
+}
+
 func decodeSingleStringResult(values []any, name string) (string, error) {
 	if err := requireViewLen(values, 1, name); err != nil {
 		return "", err
@@ -828,7 +1386,14 @@ func decodeStringVectorResult(values []any, name string) ([]string, error) {
 }
 
 func decodeObjectAddressVectorResult(values []any, name string) ([]string, error) {
-	items, err := viewVectorResult(values, name)
+	if err := requireViewLen(values, 1, name); err != nil {
+		return nil, err
+	}
+	return viewObjectAddressVector(values[0], name)
+}
+
+func viewObjectAddressVector(value any, name string) ([]string, error) {
+	items, err := viewVector(value, name)
 	if err != nil {
 		return nil, err
 	}
@@ -847,9 +1412,13 @@ func viewVectorResult(values []any, name string) ([]any, error) {
 	if err := requireViewLen(values, 1, name); err != nil {
 		return nil, err
 	}
-	items, ok := values[0].([]any)
+	return viewVector(values[0], name)
+}
+
+func viewVector(value any, name string) ([]any, error) {
+	items, ok := value.([]any)
 	if !ok {
-		return nil, fmt.Errorf("%s = %#v, want vector", name, values[0])
+		return nil, fmt.Errorf("%s = %#v, want vector", name, value)
 	}
 	return items, nil
 }
@@ -892,6 +1461,84 @@ func viewBool(value any, name string) (bool, error) {
 		return false, fmt.Errorf("%s = %#v, want bool", name, value)
 	}
 	return valueBool, nil
+}
+
+func viewAggPrice(value any, name string) (AggPrice, error) {
+	fields, ok := value.(map[string]any)
+	if !ok {
+		return AggPrice{}, fmt.Errorf("%s = %#v, want object", name, value)
+	}
+	price, err := viewString(fields["price"], name+".price")
+	if err != nil {
+		return AggPrice{}, err
+	}
+	precision, err := viewString(fields["precision"], name+".precision")
+	if err != nil {
+		return AggPrice{}, err
+	}
+	return AggPrice{Price: price, Precision: precision}, nil
+}
+
+func viewRateLimitStatus(remainValue, capacityValue, intervalValue any, name string) (RateLimitStatus, error) {
+	remain, err := viewString(remainValue, name+".remain")
+	if err != nil {
+		return RateLimitStatus{}, err
+	}
+	capacity, err := viewString(capacityValue, name+".capacity")
+	if err != nil {
+		return RateLimitStatus{}, err
+	}
+	interval, err := viewString(intervalValue, name+".interval")
+	if err != nil {
+		return RateLimitStatus{}, err
+	}
+	return RateLimitStatus{Remain: remain, Capacity: capacity, Interval: interval}, nil
+}
+
+func viewAssetRateLimitStatus(value any, name string) (AssetRateLimitStatus, error) {
+	fields, ok := value.(map[string]any)
+	if !ok {
+		return AssetRateLimitStatus{}, fmt.Errorf("%s = %#v, want object", name, value)
+	}
+	asset, err := viewObjectAddress(fields["asset"], name+".asset")
+	if err != nil {
+		return AssetRateLimitStatus{}, err
+	}
+	status, err := viewRateLimitStatus(fields["remain"], fields["capacity"], fields["interval"], name)
+	if err != nil {
+		return AssetRateLimitStatus{}, err
+	}
+	return AssetRateLimitStatus{
+		Asset:    asset,
+		Remain:   status.Remain,
+		Capacity: status.Capacity,
+		Interval: status.Interval,
+	}, nil
+}
+
+func viewPoolUPriceLimiterStatus(existsValue, remainValue, capacityValue, intervalValue any, name string) (PoolUPriceLimiterStatus, error) {
+	exists, err := viewBool(existsValue, name+".exists")
+	if err != nil {
+		return PoolUPriceLimiterStatus{}, err
+	}
+	status, err := viewRateLimitStatus(remainValue, capacityValue, intervalValue, name)
+	if err != nil {
+		return PoolUPriceLimiterStatus{}, err
+	}
+	return PoolUPriceLimiterStatus{
+		Exists:   exists,
+		Remain:   status.Remain,
+		Capacity: status.Capacity,
+		Interval: status.Interval,
+	}, nil
+}
+
+func viewPoolUPriceLimiterStatusObject(value any, name string) (PoolUPriceLimiterStatus, error) {
+	fields, ok := value.(map[string]any)
+	if !ok {
+		return PoolUPriceLimiterStatus{}, fmt.Errorf("%s = %#v, want object", name, value)
+	}
+	return viewPoolUPriceLimiterStatus(fields["exist"], fields["remain"], fields["capacity"], fields["interval"], name)
 }
 
 func viewObjectAddress(value any, name string) (string, error) {
