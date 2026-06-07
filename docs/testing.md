@@ -22,6 +22,47 @@ go test ./...
 go vet ./...
 ```
 
+If you use `mise`, the repository includes a local tool and task definition for
+the same Go version and common verification commands:
+
+```bash
+mise trust
+mise run verify
+mise run test
+mise run govulncheck
+```
+
+`mise` is optional local developer tooling. Hosted CI still uses
+`actions/setup-go` with the Go version declared in `go.mod`.
+
+Nix users can enter the pinned development shell from the repository flake:
+
+```bash
+nix develop
+make verify
+go test -count=1 ./...
+go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+```
+
+The flake pins `nixpkgs-unstable` to a revision that provides Go `1.25.11`,
+matching `go.mod`. Nix is also optional local developer tooling; Hosted CI does
+not depend on it.
+
+## Hosted CI
+
+GitHub Actions uses the Go toolchain declared in `go.mod` and runs the same
+offline verification path for pull requests, pushes to `main`, and manual
+`workflow_dispatch` runs:
+
+- `make verify`
+- `go test -count=1 ./...`
+- `govulncheck ./...`
+
+Hosted CI intentionally does not set `HYPERION_INTEGRATION=1`, so live Hyperion
+REST and Aptos fullnode smoke tests stay disabled by default. This keeps PR
+verification deterministic and independent of secrets, API keys, fullnode
+availability, or upstream network conditions.
+
 ## Current Coverage
 
 | Area | Coverage | Test files |

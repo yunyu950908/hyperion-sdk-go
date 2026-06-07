@@ -1,0 +1,22 @@
+[tools]
+go = "1.25.11"
+
+[tasks.fmt]
+description = "Format Go source files"
+run = "make fmt"
+
+[tasks.verify]
+description = "Run default offline verification"
+run = "make verify"
+
+[tasks.test]
+description = "Run uncached Go tests"
+run = "go test -count=1 ./..."
+
+[tasks.govulncheck]
+description = "Run Go vulnerability scanning"
+run = "go run golang.org/x/vuln/cmd/govulncheck@latest ./..."
+
+[tasks.test-integration]
+description = "Run opt-in live integration tests"
+run = "make test-integration"
