@@ -146,6 +146,30 @@ payload, err := sdk.Swap.SwapTransactionPayload(hyperion.SwapTransactionPayloadA
 
 See [examples/002_payloads](examples/002_payloads/main.go).
 
+The SDK also exposes current `router_v3` liquidity payload builders for wallet
+or Aptos transaction-layer integration:
+
+```go
+payload, err := sdk.Pool.CreateLiquiditySinglePayload(hyperion.CreateLiquiditySinglePayloadArgs{
+	CurrencyA:            "0x...",
+	CurrencyB:            "0x...",
+	FeeTierIndex:         "0",
+	TickLower:            "-3",
+	TickUpper:            "-1",
+	Amount:               "25086537",
+	SlippageNumerator:    "99",
+	SlippageDenominator:  "100",
+	ThresholdNumerator:   "1",
+	ThresholdDenominator: "1",
+})
+```
+
+`RemoveLiquidityMultiAgentDirectlyDepositPayload` returns a
+`MultiAgentPayloadEnvelope`: signer arguments are not included in
+`FunctionArguments`; downstream signing code must use `SecondarySignerAddresses`
+when constructing the Aptos multi-agent transaction. These builders do not sign,
+simulate, or submit transactions.
+
 ## Aptos View Calls
 
 Payload builders stay offline and deterministic. To execute an Aptos view,
@@ -169,6 +193,20 @@ values, err := sdk.Pool.EstCurrencyAAmountFromB(ctx, hyperion.EstCurrencyAAmount
 	TickUpper:        "60",
 	CurrentPriceTick: "0",
 	CurrencyBAmount:  "1000000",
+})
+```
+
+Typed view wrappers are available for position values, optimal liquidity, pool
+state, and quote helpers:
+
+```go
+amounts, err := sdk.Position.FetchPositionTokenAmounts(ctx, "0xposition")
+poolInfo, err := sdk.Position.FetchPositionPoolInfo(ctx, "0xposition")
+quote, err := sdk.Swap.FetchBatchAmountOut(ctx, hyperion.BatchAmountOutArgs{
+	PoolRoute: []string{"0xpool"},
+	AmountIn:  "1000000",
+	TokenIn:   "0x...",
+	TokenOut:  "0x...",
 })
 ```
 
@@ -220,6 +258,11 @@ Opt-in live smoke tests are documented in [docs/testing.md](docs/testing.md).
 
 - REST read methods return `JSONMap` until Hyperion publishes stable response
   schemas suitable for strong Go structs.
+- Typed Aptos view helpers decode selected on-chain view responses, but still
+  require `AptosFullNodeURL` or an injected `ViewExecutor`.
+- Hyperion contract ABI support and Hyperion UI support can differ; for example,
+  `router_v3::add_liquidity_single` remains exposed by ABI even if a UI hides
+  add zap-in flows.
 - Aggregate composer support records deterministic batched-call plans; a
   submit-ready Aptos transaction adapter is a future extension.
 - Removed low-level GraphQL APIs from older TypeScript SDK versions are not

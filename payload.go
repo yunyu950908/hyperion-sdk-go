@@ -14,6 +14,14 @@ type EntryFunctionPayload struct {
 	FunctionArguments []any    `json:"functionArguments"`
 }
 
+// MultiAgentPayloadEnvelope keeps multi-agent transaction metadata separate
+// from the entry-function payload arguments. The secondary signers must be used
+// by the downstream Aptos transaction layer when signing/submitting.
+type MultiAgentPayloadEnvelope struct {
+	Payload                  EntryFunctionPayload `json:"payload"`
+	SecondarySignerAddresses []string             `json:"secondarySignerAddresses"`
+}
+
 // SwapTransactionPayloadArgs configures a swap entry-function payload.
 type SwapTransactionPayloadArgs struct {
 	CurrencyA       string
@@ -65,6 +73,56 @@ type RemoveLiquidityTransactionPayloadArgs struct {
 	DeltaLiquidity  string
 	Slippage        string
 	Recipient       string
+}
+
+// CreateLiquiditySinglePayloadArgs configures router_v3::create_liquidity_single.
+type CreateLiquiditySinglePayloadArgs struct {
+	CurrencyA            string
+	CurrencyB            string
+	FeeTierIndex         string
+	TickLower            string
+	TickUpper            string
+	Amount               string
+	SlippageNumerator    string
+	SlippageDenominator  string
+	ThresholdNumerator   string
+	ThresholdDenominator string
+}
+
+// AddLiquiditySinglePayloadArgs configures router_v3::add_liquidity_single.
+type AddLiquiditySinglePayloadArgs struct {
+	PositionID           string
+	FromCurrency         string
+	ToCurrency           string
+	Amount               string
+	SlippageNumerator    string
+	SlippageDenominator  string
+	ThresholdNumerator   string
+	ThresholdDenominator string
+}
+
+// AddLiquiditySingleCoinsPayloadArgs configures router_v3::add_liquidity_single_coins.
+type AddLiquiditySingleCoinsPayloadArgs struct {
+	PositionID           string
+	CoinType             string
+	PairedCurrency       string
+	Amount               string
+	SlippageNumerator    string
+	SlippageDenominator  string
+	ThresholdNumerator   string
+	ThresholdDenominator string
+}
+
+// RemoveLiquidityMultiAgentDirectlyDepositPayloadArgs configures
+// router_v3::remove_liquidity_with_multiagent_directly_deposit. The two
+// secondary signer addresses are envelope metadata, not function arguments.
+type RemoveLiquidityMultiAgentDirectlyDepositPayloadArgs struct {
+	PositionID               string
+	DeltaLiquidity           string
+	MinAmountA               string
+	MinAmountB               string
+	Deadline                 string
+	SecondarySignerAddresses []string
 }
 
 type poolEstAmountArgs struct {
@@ -235,6 +293,51 @@ func (p *PoolService) CreatePoolTransactionPayload(args CreatePoolTransactionPay
 	}), nil
 }
 
+// CreateLiquiditySinglePayload builds a router_v3 single-sided create liquidity payload.
+func (p *PoolService) CreateLiquiditySinglePayload(args CreateLiquiditySinglePayloadArgs) (EntryFunctionPayload, error) {
+	if err := requireMetadataPair(args.CurrencyA, args.CurrencyB); err != nil {
+		return EntryFunctionPayload{}, err
+	}
+	feeTierIndex, err := parseUint8(args.FeeTierIndex)
+	if err != nil {
+		return EntryFunctionPayload{}, err
+	}
+	tickLower, err := parseInt64(args.TickLower)
+	if err != nil {
+		return EntryFunctionPayload{}, err
+	}
+	tickUpper, err := parseInt64(args.TickUpper)
+	if err != nil {
+		return EntryFunctionPayload{}, err
+	}
+	if err := requireRawIntegerStrings(map[string]string{
+		"amount":               args.Amount,
+		"slippageNumerator":    args.SlippageNumerator,
+		"slippageDenominator":  args.SlippageDenominator,
+		"thresholdNumerator":   args.ThresholdNumerator,
+		"thresholdDenominator": args.ThresholdDenominator,
+	}); err != nil {
+		return EntryFunctionPayload{}, err
+	}
+
+	return EntryFunctionPayload{
+		Function:      p.client.Options.ContractAddress + "::router_v3::create_liquidity_single",
+		TypeArguments: []string{},
+		FunctionArguments: []any{
+			args.CurrencyA,
+			args.CurrencyB,
+			feeTierIndex,
+			TickComplement(tickLower),
+			TickComplement(tickUpper),
+			args.Amount,
+			args.SlippageNumerator,
+			args.SlippageDenominator,
+			args.ThresholdNumerator,
+			args.ThresholdDenominator,
+		},
+	}, nil
+}
+
 // AddLiquidityTransactionPayload builds an add-liquidity entry-function payload.
 func (p *PositionService) AddLiquidityTransactionPayload(args AddLiquidityTransactionPayloadArgs) (EntryFunctionPayload, error) {
 	if err := CheckCurrencyPair(args.CurrencyA, args.CurrencyB); err != nil {
@@ -285,6 +388,75 @@ func (p *PositionService) AddLiquidityTransactionPayload(args AddLiquidityTransa
 			FunctionArguments: append([]any{args.PositionID, args.CurrencyA}, paramsReverse...),
 		},
 	}), nil
+}
+
+// AddLiquiditySinglePayload builds a router_v3 single-sided add liquidity payload.
+func (p *PositionService) AddLiquiditySinglePayload(args AddLiquiditySinglePayloadArgs) (EntryFunctionPayload, error) {
+	if err := requireMetadataPair(args.FromCurrency, args.ToCurrency); err != nil {
+		return EntryFunctionPayload{}, err
+	}
+	if err := requireNonEmpty("positionID", args.PositionID); err != nil {
+		return EntryFunctionPayload{}, err
+	}
+	if err := requireRawIntegerStrings(map[string]string{
+		"amount":               args.Amount,
+		"slippageNumerator":    args.SlippageNumerator,
+		"slippageDenominator":  args.SlippageDenominator,
+		"thresholdNumerator":   args.ThresholdNumerator,
+		"thresholdDenominator": args.ThresholdDenominator,
+	}); err != nil {
+		return EntryFunctionPayload{}, err
+	}
+
+	return EntryFunctionPayload{
+		Function:      p.client.Options.ContractAddress + "::router_v3::add_liquidity_single",
+		TypeArguments: []string{},
+		FunctionArguments: []any{
+			args.PositionID,
+			args.FromCurrency,
+			args.ToCurrency,
+			args.Amount,
+			args.SlippageNumerator,
+			args.SlippageDenominator,
+			args.ThresholdNumerator,
+			args.ThresholdDenominator,
+		},
+	}, nil
+}
+
+// AddLiquiditySingleCoinsPayload builds a router_v3 coin-to-FA single-sided add liquidity payload.
+func (p *PositionService) AddLiquiditySingleCoinsPayload(args AddLiquiditySingleCoinsPayloadArgs) (EntryFunctionPayload, error) {
+	if err := requireNonEmpty("positionID", args.PositionID); err != nil {
+		return EntryFunctionPayload{}, err
+	}
+	if !isCoinType(args.CoinType) {
+		return EntryFunctionPayload{}, errors.New("coinType must be an Aptos coin type")
+	}
+	if err := requireMetadataAddress("pairedCurrency", args.PairedCurrency); err != nil {
+	}
+	if err := requireRawIntegerStrings(map[string]string{
+		"amount":               args.Amount,
+		"slippageNumerator":    args.SlippageNumerator,
+		"slippageDenominator":  args.SlippageDenominator,
+		"thresholdNumerator":   args.ThresholdNumerator,
+		"thresholdDenominator": args.ThresholdDenominator,
+	}); err != nil {
+		return EntryFunctionPayload{}, err
+	}
+
+	return EntryFunctionPayload{
+		Function:      p.client.Options.ContractAddress + "::router_v3::add_liquidity_single_coins",
+		TypeArguments: []string{args.CoinType},
+		FunctionArguments: []any{
+			args.PositionID,
+			args.PairedCurrency,
+			args.Amount,
+			args.SlippageNumerator,
+			args.SlippageDenominator,
+			args.ThresholdNumerator,
+			args.ThresholdDenominator,
+		},
+	}, nil
 }
 
 // RemoveLiquidityTransactionPayload builds a remove-liquidity entry-function payload.
@@ -339,6 +511,45 @@ func (p *PositionService) RemoveLiquidityTransactionPayload(args RemoveLiquidity
 			FunctionArguments: functionArguments,
 		},
 	}), nil
+}
+
+// RemoveLiquidityMultiAgentDirectlyDepositPayload builds a router_v3 remove
+// liquidity payload plus the required multi-agent signer metadata.
+func (p *PositionService) RemoveLiquidityMultiAgentDirectlyDepositPayload(args RemoveLiquidityMultiAgentDirectlyDepositPayloadArgs) (MultiAgentPayloadEnvelope, error) {
+	if err := requireNonEmpty("positionID", args.PositionID); err != nil {
+		return MultiAgentPayloadEnvelope{}, err
+	}
+	if len(args.SecondarySignerAddresses) != 2 {
+		return MultiAgentPayloadEnvelope{}, errors.New("secondarySignerAddresses must contain exactly 2 addresses")
+	}
+	for _, address := range args.SecondarySignerAddresses {
+		if !isStrictAccountAddress(address) {
+			return MultiAgentPayloadEnvelope{}, errors.New("invalid secondary signer address")
+		}
+	}
+	if err := requireRawIntegerStrings(map[string]string{
+		"deltaLiquidity": args.DeltaLiquidity,
+		"minAmountA":     args.MinAmountA,
+		"minAmountB":     args.MinAmountB,
+		"deadline":       args.Deadline,
+	}); err != nil {
+		return MultiAgentPayloadEnvelope{}, err
+	}
+
+	return MultiAgentPayloadEnvelope{
+		Payload: EntryFunctionPayload{
+			Function:      p.client.Options.ContractAddress + "::router_v3::remove_liquidity_with_multiagent_directly_deposit",
+			TypeArguments: []string{},
+			FunctionArguments: []any{
+				args.PositionID,
+				args.DeltaLiquidity,
+				args.MinAmountA,
+				args.MinAmountB,
+				args.Deadline,
+			},
+		},
+		SecondarySignerAddresses: append([]string(nil), args.SecondarySignerAddresses...),
+	}, nil
 }
 
 // FetchTokensAmountByPositionIDPayload builds a view payload for position token amounts.
@@ -552,6 +763,51 @@ func parseUint8(value string) (uint8, error) {
 		return 0, err
 	}
 	return uint8(parsed), nil
+}
+
+func requireNonEmpty(name, value string) error {
+	if value == "" {
+		return errors.New(name + " is required")
+	}
+	return nil
+}
+
+func requireMetadataPair(currencyA, currencyB string) error {
+	if err := requireMetadataAddress("currencyA", currencyA); err != nil {
+		return err
+	}
+	return requireMetadataAddress("currencyB", currencyB)
+}
+
+func requireMetadataAddress(name, value string) error {
+	if err := requireNonEmpty(name, value); err != nil {
+		return err
+	}
+	if !strings.HasPrefix(value, "0x") || isCoinType(value) {
+		return errors.New(name + " must be a fungible-asset metadata address")
+	}
+	return nil
+}
+
+func requireRawIntegerStrings(values map[string]string) error {
+	for name, value := range values {
+		if err := requireRawIntegerString(name, value); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func requireRawIntegerString(name, value string) error {
+	if value == "" {
+		return errors.New(name + " is required")
+	}
+	for _, ch := range value {
+		if ch < '0' || ch > '9' {
+			return errors.New(name + " must be a raw integer string")
+		}
+	}
+	return nil
 }
 
 func parseEstimateTicks(args poolEstAmountArgs) (int64, int64, int64, error) {
