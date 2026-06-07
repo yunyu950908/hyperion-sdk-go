@@ -26,6 +26,8 @@ covers the main TypeScript SDK surface:
 - swap coin-type to fungible-asset metadata conversion for normal swap payloads
 - aggregate route fetching and a deterministic aggregate composer recorder
 - Aptos view execution through an injectable `ViewExecutor`
+- typed Aptos view helpers for position, pool, quote, price hub, protocol guard,
+  and coin wrapper reads
 - parity fixtures, exported API coverage docs, `make verify`, and opt-in live
   integration smoke tests
 
@@ -197,7 +199,8 @@ values, err := sdk.Pool.EstCurrencyAAmountFromB(ctx, hyperion.EstCurrencyAAmount
 ```
 
 Typed view wrappers are available for position values, optimal liquidity, pool
-state, and quote helpers:
+state, quote helpers, price hub reads, protocol guard checks, and coin wrapper
+identity reads:
 
 ```go
 amounts, err := sdk.Position.FetchPositionTokenAmounts(ctx, "0xposition")
@@ -209,6 +212,40 @@ quote, err := sdk.Swap.FetchBatchAmountOut(ctx, hyperion.BatchAmountOutArgs{
 	TokenOut:  "0x...",
 })
 ```
+
+Price hub helpers expose on-chain price preview/source comparison without
+converting `u256` or `u64` values to floats:
+
+```go
+preview, err := sdk.PriceHub.FetchPricePreview(ctx, hyperion.PricePreviewArgs{
+	Asset:  "0x...",       // FA metadata object address
+	Amount: "1000000000", // raw base-unit integer string
+})
+comparison, err := sdk.PriceHub.FetchPriceSourceComparison(ctx, "0x...")
+```
+
+Protocol guard helpers expose `rate_limiter_check` views so wallets and
+services can preflight limiter state before simulation or submission:
+
+```go
+status, err := sdk.RateLimiter.FetchGlobalAssetRateLimiter(ctx, "0x...")
+poolGuard, err := sdk.RateLimiter.FetchPoolUPriceLimiter(ctx, "0xpool")
+globalGuard, err := sdk.RateLimiter.FetchGlobalUPriceLimiter(ctx)
+```
+
+Coin wrapper helpers normalize token identity across coin type strings and FA
+metadata object addresses:
+
+```go
+isWrapper, err := sdk.CoinWrapper.FetchIsWrapper(ctx, "0x...")
+coinType, err := sdk.CoinWrapper.FetchCoinType(ctx, "0x...")
+formatted, err := sdk.CoinWrapper.FetchFormattedFungibleAsset(ctx, "0x...")
+```
+
+These helpers are read-only: they do not sign, simulate, submit, bypass protocol
+guards, or decide wallet policy. Use their typed output as transaction preflight
+or UI/service diagnostics, then pass any transaction payload to your wallet or
+Aptos transaction layer.
 
 `EntryFunctionPayload` preserves the upstream TypeScript SDK's camelCase JSON
 field names for parity snapshots. The REST view executor converts it to Aptos
@@ -260,6 +297,11 @@ Opt-in live smoke tests are documented in [docs/testing.md](docs/testing.md).
   schemas suitable for strong Go structs.
 - Typed Aptos view helpers decode selected on-chain view responses, but still
   require `AptosFullNodeURL` or an injected `ViewExecutor`.
+- Price hub, rate limiter, and coin wrapper helpers are read-only protocol views;
+  they do not submit transactions or override protocol guard behavior.
+- Coin wrapper helpers accept fungible-asset metadata object addresses. Use
+  coin-type strings such as `0x1::aptos_coin::AptosCoin` only where a method
+  explicitly asks for a coin type.
 - Hyperion contract ABI support and Hyperion UI support can differ; for example,
   `router_v3::add_liquidity_single` remains exposed by ABI even if a UI hides
   add zap-in flows.

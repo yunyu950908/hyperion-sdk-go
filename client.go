@@ -46,14 +46,17 @@ type InitOptions struct {
 // Client is the root Hyperion SDK handle. Services mirror the upstream TypeScript
 // SDK modules while using Go contexts and typed request/response values.
 type Client struct {
-	Options    Options
-	Request    *RequestClient
-	APIRequest *RequestClient
-	ViewClient ViewExecutor
-	Pool       *PoolService
-	Position   *PositionService
-	Reward     *RewardService
-	Swap       *SwapService
+	Options     Options
+	Request     *RequestClient
+	APIRequest  *RequestClient
+	ViewClient  ViewExecutor
+	Pool        *PoolService
+	Position    *PositionService
+	Reward      *RewardService
+	Swap        *SwapService
+	PriceHub    *PriceHubService
+	RateLimiter *RateLimiterService
+	CoinWrapper *CoinWrapperService
 }
 
 // PoolService provides pool read and transaction-payload helpers.
@@ -73,6 +76,21 @@ type RewardService struct {
 
 // SwapService provides swap quote and transaction-payload helpers.
 type SwapService struct {
+	client *Client
+}
+
+// PriceHubService provides price_hub read-only view helpers.
+type PriceHubService struct {
+	client *Client
+}
+
+// RateLimiterService provides protocol guard and rate-limiter read-only view helpers.
+type RateLimiterService struct {
+	client *Client
+}
+
+// CoinWrapperService provides coin_wrapper identity read-only view helpers.
+type CoinWrapperService struct {
 	client *Client
 }
 
@@ -147,6 +165,9 @@ func New(options Options) (*Client, error) {
 	client.Position = &PositionService{client: client}
 	client.Reward = &RewardService{client: client}
 	client.Swap = &SwapService{client: client}
+	client.PriceHub = &PriceHubService{client: client}
+	client.RateLimiter = &RateLimiterService{client: client}
+	client.CoinWrapper = &CoinWrapperService{client: client}
 
 	return client, nil
 }
