@@ -1,0 +1,64 @@
+{
+  "addSingle": {
+    "function": "0x8b4a2c4bb53857c718a04c020b98f8c2e1f99a68b0f57389a8bf5434cd22e05c::router_v3::add_liquidity_single",
+    "typeArguments": [],
+    "functionArguments": [
+      "0xa836eccaeb80072e69f46a01b6899cfb8797d31fdff4dc3ac104296d5370d62a",
+      "0x357b0b74bc833e95a115ad22604854d6b0fca151cecd94111770e5d6ffc9dc2b",
+      "0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b",
+      "25086537",
+      "99",
+      "100",
+      "1",
+      "1"
+    ]
+  },
+  "addSingleCoins": {
+    "function": "0x8b4a2c4bb53857c718a04c020b98f8c2e1f99a68b0f57389a8bf5434cd22e05c::router_v3::add_liquidity_single_coins",
+    "typeArguments": [
+      "0x1::aptos_coin::AptosCoin"
+    ],
+    "functionArguments": [
+      "0xa836eccaeb80072e69f46a01b6899cfb8797d31fdff4dc3ac104296d5370d62a",
+      "0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b",
+      "25086537",
+      "99",
+      "100",
+      "1",
+      "1"
+    ]
+  },
+  "createSingle": {
+    "function": "0x8b4a2c4bb53857c718a04c020b98f8c2e1f99a68b0f57389a8bf5434cd22e05c::router_v3::create_liquidity_single",
+    "typeArguments": [],
+    "functionArguments": [
+      "0x357b0b74bc833e95a115ad22604854d6b0fca151cecd94111770e5d6ffc9dc2b",
+      "0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b",
+      0,
+      4294967293,
+      4294967295,
+      "25086537",
+      "99",
+      "100",
+      "1",
+      "1"
+    ]
+  },
+  "removeMultiAgent": {
+    "payload": {
+      "function": "0x8b4a2c4bb53857c718a04c020b98f8c2e1f99a68b0f57389a8bf5434cd22e05c::router_v3::remove_liquidity_with_multiagent_directly_deposit",
+      "typeArguments": [],
+      "functionArguments": [
+        "0x2ada87ed27ac997b88dfdeb430d0b8c1abbd40b28be11aacb745da5d3fca26f9",
+        "1259530800761551",
+        "0",
+        "62307822006",
+        "4936478833"
+      ]
+    },
+    "secondarySignerAddresses": [
+      "0xce702f163f8f9a95e842584ad9377855030442837416045d8990c2eabb0e0ace",
+      "0xfb644c0c2cadc6ea2041ebb19492e6e071709665a55a2cf302290460c144fcdf"
+    ]
+  }
+}
