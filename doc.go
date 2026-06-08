@@ -6,9 +6,10 @@
 // construction, and Aptos view execution.
 //
 // Networked read methods accept context.Context and return explicit errors.
-// REST read responses use JSONMap while Hyperion response schemas remain
-// flexible. Payload builders return EntryFunctionPayload values that mirror the
-// upstream TypeScript SDK shape and can be used offline.
+// Original REST read methods use JSONMap while Hyperion response schemas remain
+// flexible; additive typed wrappers decode selected stable fields. Payload
+// builders return EntryFunctionPayload values that mirror the upstream
+// TypeScript SDK shape and can be used offline.
 //
 // Live Aptos view calls are available through Client.View, service convenience
 // methods, and the ViewExecutor interface. The built-in AptosViewExecutor posts

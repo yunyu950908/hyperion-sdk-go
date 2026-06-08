@@ -12,7 +12,7 @@ This document summarizes how the audited TypeScript SDK surface maps to
 | `HyperionSDK` | `Client` | The Go client exposes service fields instead of JavaScript getters. |
 | `sdk.Pool`, `sdk.Position`, `sdk.Reward`, `sdk.Swap` | `Client.Pool`, `Client.Position`, `Client.Reward`, `Client.Swap` | Services hold methods for REST reads, payload builders, and view wrappers. |
 | TypeScript REST reads | Go methods with `context.Context` | Networked methods accept a context and return explicit errors. |
-| Dynamic REST objects | `JSONMap` | The Go SDK keeps REST response boundaries flexible until schemas stabilize. |
+| Dynamic REST objects | `JSONMap` plus typed wrappers | Existing REST methods keep flexible `JSONMap` returns; additive `*Typed` methods decode selected stable fields. |
 | Entry-function payload builders | `EntryFunctionPayload` and typed args structs | Builders are deterministic and offline. |
 | Aptos view calls | `Client.View` and `ViewExecutor` | Users can use the built-in REST executor or inject their own implementation. |
 | Aggregate swap helper | `EstAmountByAggregateSwap` plus `AggregateSwapComposer` | Route fetching is supported; submit-ready transaction serialization is an adapter concern. |
@@ -33,9 +33,11 @@ The request layer is covered with offline `httptest` fixtures.
 ### REST Response Shape
 
 The upstream TypeScript SDK returns dynamic REST objects. The Go SDK mirrors
-that with `JSONMap` until Hyperion publishes stable public response schemas.
-Changing those methods to strong structs should be a separate compatibility
-decision.
+that with `JSONMap` on the original REST methods so callers can still access
+every upstream field. Additive typed wrappers are available for selected stable
+fields on pool, position, reward, and swap quote reads. These wrappers keep
+integer amounts and ticks as strings and intentionally omit dynamic or unstable
+REST fields.
 
 ### Token Amount Precision
 
@@ -89,6 +91,4 @@ Live integration smoke tests are opt-in and documented in
 
 - add a submit-ready aggregate composer adapter if a production Aptos Go
   transaction builder integration is required
-- replace selected `JSONMap` returns with strong response structs if Hyperion
-  publishes stable schemas
-- add GitHub Actions workflow configuration if CI hosting is required
+- expand typed REST wrappers if Hyperion publishes broader stable schemas

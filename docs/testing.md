@@ -70,10 +70,10 @@ availability, or upstream network conditions.
 | SDK initialization | Mainnet/testnet defaults, API key propagation, service handles, required option validation | `client_test.go` |
 | Request layer | URL normalization, query encoding, JSON decoding, non-2xx errors | `request_test.go` |
 | Utilities | Tick complement, slippage bounds, slippage calculation, currency checks, round tick, price-to-tick, tick-to-price | `utils_test.go` |
-| Pool REST reads | Pools list, pool by ID, pool by token pair and fee tier, ticks | `modules_test.go` |
-| Position REST reads | Positions by owner, ownership by position ID, non-zero fee history filtering | `modules_test.go` |
-| Reward REST reads | Non-zero reward history filtering | `modules_test.go` |
-| Swap quotes | `flag=out`, `flag=in`, safe mode query behavior | `modules_test.go` |
+| Pool REST reads | Pools list, pool by ID, pool by token pair and fee tier, ticks, and typed stable-field decoding | `modules_test.go`, `rest_types_test.go` |
+| Position REST reads | Positions by owner, ownership by position ID, non-zero fee history filtering, and typed stable-field decoding | `modules_test.go`, `rest_types_test.go` |
+| Reward REST reads | Non-zero reward history filtering and typed stable-field decoding | `modules_test.go`, `rest_types_test.go` |
+| Swap quotes | `flag=out`, `flag=in`, safe mode query behavior, and typed quote decoding | `modules_test.go`, `rest_types_test.go` |
 | Aggregate route fetch | Mainnet-only guard and route response decoding | `aggregate_test.go` |
 | Aggregate composer recorder | Exact-in, exact-out refund, DEX adapter dispatch, mainnet guard, and error boundaries | `aggregate_composer_test.go` |
 | Payload builders | Pool, legacy liquidity, router_v3 liquidity, pool estimate view payloads, position amount view payload, swap coin/FA argument order, reward, and claim argument order | `payload_test.go`, `router_v3_payload_test.go`, `pool_payload_test.go`, `position_payload_test.go` |
@@ -88,12 +88,12 @@ availability, or upstream network conditions.
 | `Init`, `New`, `Options`, `InitOptions`, `Network` | Offline unit tests for defaults, required options, URL normalization, API key propagation, and service initialization | `client_test.go` |
 | `Client.View`, `ViewExecutor`, `AptosViewExecutor`, `ViewStatusError` | Offline tests for missing executor errors, REST `/v1/view` conversion, API key header, versioned URL handling, and non-2xx errors; opt-in live timestamp smoke | `view_executor_test.go`, `view_integration_test.go` |
 | `RequestClient`, `QueryParams`, `HTTPStatusError` | Offline tests for query encoding, JSON decoding, nil output handling, and non-2xx response details | `request_test.go` |
-| Pool REST reads: `FetchAllPools`, `FetchPoolByID`, `GetPoolByTokenPairAndFeeTier`, `FetchTicks` | Offline unit tests and parity REST fixtures; opt-in live pool-list smoke | `modules_test.go`, `parity_test.go`, `integration_hyperion_test.go` |
+| Pool REST reads: `FetchAllPools`, `FetchPoolByID`, `GetPoolByTokenPairAndFeeTier`, `FetchTicks`, and `*Typed` variants | Offline unit tests, typed decode tests, and parity REST fixtures; opt-in live pool-list smoke | `modules_test.go`, `rest_types_test.go`, `parity_test.go`, `integration_hyperion_test.go` |
 | Pool payload/view helpers: `CreatePoolTransactionPayload`, `CreateLiquiditySinglePayload`, `EstCurrencyAAmountFromBPayload`, `EstCurrencyBAmountFromAPayload`, typed optimal liquidity, pool state, and pool quote helpers | Offline payload/golden tests for builders and fake-executor tests for view wrappers | `payload_test.go`, `router_v3_payload_test.go`, `pool_payload_test.go`, `view_services_test.go`, `typed_view_helpers_test.go` |
-| Position REST reads: `FetchAllPositionsByAddress`, `FetchPositionByID`, `FetchFeeHistory` | Offline unit tests for request paths and zero-amount fee filtering | `modules_test.go` |
+| Position REST reads: `FetchAllPositionsByAddress`, `FetchPositionByID`, `FetchFeeHistory`, and `*Typed` variants | Offline unit tests for request paths, typed decode paths, and zero-amount fee filtering | `modules_test.go`, `rest_types_test.go` |
 | Position payload/view helpers: `AddLiquidityTransactionPayload`, `AddLiquiditySinglePayload`, `AddLiquiditySingleCoinsPayload`, `RemoveLiquidityTransactionPayload`, `RemoveLiquidityMultiAgentDirectlyDepositPayload`, typed position value helpers, claim payload helpers | Offline payload/golden tests, strict recipient/multi-agent validation, and fake-executor view wrapper tests | `payload_test.go`, `router_v3_payload_test.go`, `position_payload_test.go`, `parity_test.go`, `view_services_test.go`, `typed_view_helpers_test.go` |
-| Reward REST and payload/view helpers: `FetchRewardHistory`, `FetchRewardsPayload`, `FetchRewards`, `ClaimRewardPayload` | Offline unit tests for reward filtering, payload construction, and fake-executor view wrapper behavior | `modules_test.go`, `payload_test.go`, `view_services_test.go` |
-| Swap quote methods: `EstFromAmount`, `EstToAmount`, `EstimateAmountArgs` | Offline unit tests and parity REST fixtures; opt-in live quote smoke when token env is supplied | `modules_test.go`, `parity_test.go`, `integration_hyperion_test.go` |
+| Reward REST and payload/view helpers: `FetchRewardHistory`, `FetchRewardHistoryTyped`, `FetchRewardsPayload`, `FetchRewards`, `ClaimRewardPayload` | Offline unit tests for reward filtering, typed decode paths, payload construction, and fake-executor view wrapper behavior | `modules_test.go`, `rest_types_test.go`, `payload_test.go`, `view_services_test.go` |
+| Swap quote methods: `EstFromAmount`, `EstToAmount`, `EstFromAmountTyped`, `EstToAmountTyped`, `EstimateAmountArgs` | Offline unit tests, typed decode tests, and parity REST fixtures; opt-in live quote smoke when token env is supplied | `modules_test.go`, `rest_types_test.go`, `parity_test.go`, `integration_hyperion_test.go` |
 | Swap payload builders: `SwapTransactionPayload`, `SwapWithPartnershipTransactionPayload` | Offline tests for FA-to-FA, coin-to-coin conversion, original pair selection, partnership behavior, and golden parity snapshots | `payload_test.go`, `parity_test.go` |
 | Aggregate route fetch: `EstAmountByAggregateSwap`, route/result structs, aggregate constants | Offline mainnet guard and parity route fixture; opt-in live aggregate route smoke on mainnet when token env is supplied | `aggregate_test.go`, `parity_test.go`, `integration_hyperion_test.go` |
 | Aggregate composer: `GenerateAggregateSwapTransactionScript`, `AggregateSwapComposer`, `AggregateSwapRecorder`, call argument/result types | Offline recorder tests for exact-in, exact-out refund, DEX adapter dispatch, composer errors, and mainnet guard | `aggregate_composer_test.go` |
@@ -113,7 +113,7 @@ ordering.
 
 | Area | Follow-up |
 | --- | --- |
-| Strong REST response structs if schemas stabilize | Open a dedicated follow-up issue when Hyperion publishes stable response schemas. |
+| Broader REST response structs | Expand typed wrappers when Hyperion publishes stable schemas for additional fields. |
 | Submit-ready aggregate composer adapters | Keep behind adapter-specific tests if a production Aptos SDK composer is added later. |
 
 ## Integration Tests

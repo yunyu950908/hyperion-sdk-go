@@ -35,8 +35,9 @@ requirement explicitly asks for them.
 
 - Every networked method accepts `context.Context`.
 - HTTP behavior is testable through an injected `*http.Client`.
-- REST endpoints decode into flexible `JSONMap` values until Hyperion publishes
-  stable response schemas for every endpoint.
+- REST endpoints keep flexible `JSONMap` methods and expose additive typed
+  wrappers for selected stable fields. Dynamic or unstable REST fields remain
+  accessible through the `JSONMap` methods.
 - Transaction payload builders should return typed Go structs instead of raw
   `map[string]any`.
 - Numeric token amounts should avoid JavaScript-style precision loss. Where the
@@ -97,5 +98,5 @@ parity checks, signing flows, and custom executor adapters.
   `createObjectAddress(0xa, shortCoinTypeBytes)`. Partnership swap payloads keep
   raw coin type arguments because the upstream TypeScript SDK does not apply the
   FA conversion in that builder.
-- Replace `JSONMap` REST returns with stronger response structs if upstream API
-  schemas become available.
+- Expand typed REST wrappers if upstream API schemas become stable enough to
+  cover more fields without removing the existing `JSONMap` escape hatch.

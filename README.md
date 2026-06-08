@@ -20,6 +20,7 @@ covers the main TypeScript SDK surface:
 
 - mainnet/testnet initialization
 - Hyperion REST reads for Pool, Position, Reward, and Swap
+- additive typed REST response wrappers for selected stable fields
 - swap quote requests
 - transaction payload builders for common pool, liquidity, reward, and swap
   workflows
@@ -68,7 +69,7 @@ The examples are numbered as a suggested learning path:
 | 001 | [examples/001_init](examples/001_init/main.go) | SDK initialization and network defaults |
 | 002 | [examples/002_payloads](examples/002_payloads/main.go) | Offline transaction payload builders |
 | 003 | [examples/003_read_pools](examples/003_read_pools/main.go) | Hyperion REST pool reads |
-| 004 | [examples/004_swap_quote](examples/004_swap_quote/main.go) | Swap quote requests |
+| 004 | [examples/004_swap_quote](examples/004_swap_quote/main.go) | Typed swap quote requests |
 | 005 | [examples/005_view](examples/005_view/main.go) | Aptos view calls through `ViewExecutor` |
 | 006 | [examples/006_aggregate_composer](examples/006_aggregate_composer/main.go) | Aggregate swap composer recording |
 | 007 | [examples/007_swap_payload_from_quote](examples/007_swap_payload_from_quote/main.go) | Build an unsigned normal swap payload from a live quote path |
@@ -103,13 +104,23 @@ Legacy upstream URLs ending in `/v1/graphql` are normalized to the REST API host
 
 ## Common Reads
 
-Networked read methods accept `context.Context` and return flexible `JSONMap`
-values for REST endpoints whose public schemas can still change.
+Networked read methods accept `context.Context`. Legacy REST read methods keep
+returning flexible `JSONMap` values for callers that need every dynamic
+upstream field.
 
 ```go
 pools, err := sdk.Pool.FetchAllPools(ctx)
 positions, err := sdk.Position.FetchAllPositionsByAddress(ctx, "0xowner")
 rewards, err := sdk.Reward.FetchRewardHistory(ctx, "position-id", "0xowner")
+```
+
+Typed wrappers are also available for selected stable fields. They preserve
+integer amounts and ticks as strings and intentionally omit unstable REST fields.
+
+```go
+pools, err := sdk.Pool.FetchAllPoolsTyped(ctx)
+positions, err := sdk.Position.FetchAllPositionsByAddressTyped(ctx, "0xowner")
+fees, err := sdk.Position.FetchFeeHistoryTyped(ctx, "position-id", "0xowner")
 ```
 
 See [examples/003_read_pools](examples/003_read_pools/main.go) for a compile-checked
@@ -118,12 +129,14 @@ read example.
 ## Swap Quotes
 
 ```go
-quote, err := sdk.Swap.EstFromAmount(ctx, hyperion.EstimateAmountArgs{
+quote, err := sdk.Swap.EstFromAmountTyped(ctx, hyperion.EstimateAmountArgs{
 	Amount:   "1000000",
 	From:     "0x...",
 	To:       "0x...",
 	SafeMode: true,
 })
+amountOut := quote.ResolvedAmountOut()
+poolRoute := quote.Path
 ```
 
 See [examples/004_swap_quote](examples/004_swap_quote/main.go).
@@ -293,8 +306,8 @@ Opt-in live smoke tests are documented in [docs/testing.md](docs/testing.md).
 
 ## Known Boundaries
 
-- REST read methods return `JSONMap` until Hyperion publishes stable response
-  schemas suitable for strong Go structs.
+- Legacy REST read methods return `JSONMap`; typed REST wrappers expose selected
+  stable fields and intentionally omit dynamic upstream fields.
 - Typed Aptos view helpers decode selected on-chain view responses, but still
   require `AptosFullNodeURL` or an injected `ViewExecutor`.
 - Price hub, rate limiter, and coin wrapper helpers are read-only protocol views;

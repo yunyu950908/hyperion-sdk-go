@@ -58,7 +58,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	quote, err := sdk.Swap.EstFromAmount(context.Background(), hyperion.EstimateAmountArgs{
+	quote, err := sdk.Swap.EstFromAmountTyped(context.Background(), hyperion.EstimateAmountArgs{
 		Amount:   amount,
 		From:     from,
 		To:       to,
@@ -67,5 +67,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("quote fields: %d\n", len(quote))
+	fmt.Printf("quote flag=%s amountOut=%s path pools=%d\n",
+		quote.Flag,
+		quote.ResolvedAmountOut(),
+		len(quote.Path),
+	)
 }
