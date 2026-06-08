@@ -67,8 +67,9 @@ coin type to fungible-asset metadata conversion:
 
 The TypeScript SDK uses an Aptos script-composer dependency. The Go SDK exposes
 an `AggregateSwapComposer` interface and a deterministic `AggregateSwapRecorder`
-so callers can inspect or adapt the batched-call plan. `BuildAggregateSwapSubmitTransaction`
-turns the same plan into an `AggregateSwapSubmitPlan` and delegates transaction
+so callers can inspect or adapt the batched-call plan.
+`BuildAggregateSwapSubmitPlan` returns the plan directly for wallet-layer
+handoff, and `BuildAggregateSwapSubmitTransaction` delegates transaction
 construction to an injected `AggregateSwapSubmitAdapter`.
 
 Current Aptos Go SDK releases can build script transactions when compiled
