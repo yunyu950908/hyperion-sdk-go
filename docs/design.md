@@ -43,6 +43,9 @@ requirement explicitly asks for them.
 - Numeric token amounts should avoid JavaScript-style precision loss. Where the
   upstream SDK returns JS numbers, Go payload builders may keep string values if
   that is safer for Aptos SDK consumers; differences must be documented.
+- Decimal helper dependencies should stay internal and justified by repeated
+  calculation needs. Current policy is recorded in
+  [numeric-helpers.md](numeric-helpers.md).
 - Aggregate swap route fetching is part of the core SDK. Aggregate transaction
   composition uses an `AggregateSwapComposer` interface plus
   `AggregateSwapRecorder` to mirror TypeScript batched-call planning without

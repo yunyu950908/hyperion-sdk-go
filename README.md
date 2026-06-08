@@ -338,6 +338,9 @@ Opt-in live smoke tests are documented in [docs/testing.md](docs/testing.md).
 - Aggregate composer support records deterministic batched-call plans and can
   pass them to an injected submit adapter; the built-in unsupported adapter
   documents the current Aptos Go SDK Dynamic Script Composer gap.
+- Numeric public API fields intentionally stay as strings for chain-facing
+  integer values; see [docs/numeric-helpers.md](docs/numeric-helpers.md) for the
+  current `apd/v3` decision.
 - Removed low-level GraphQL APIs from older TypeScript SDK versions are not
   recreated as first-class Go APIs.
 
