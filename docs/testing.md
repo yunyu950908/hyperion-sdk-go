@@ -75,7 +75,7 @@ availability, or upstream network conditions.
 | Reward REST reads | Non-zero reward history filtering and typed stable-field decoding | `modules_test.go`, `rest_types_test.go` |
 | Swap quotes | `flag=out`, `flag=in`, safe mode query behavior, and typed quote decoding | `modules_test.go`, `rest_types_test.go` |
 | Aggregate route fetch | Mainnet-only guard and route response decoding | `aggregate_test.go` |
-| Aggregate composer recorder | Exact-in, exact-out refund, DEX adapter dispatch, mainnet guard, and error boundaries | `aggregate_composer_test.go` |
+| Aggregate composer recorder and submit adapter boundary | Exact-in, exact-out refund, DEX adapter dispatch, mainnet guard, submit adapter plan handoff, unsupported Go SDK gap, and error boundaries | `aggregate_composer_test.go`, `aggregate_submit_adapter_test.go` |
 | Payload builders | Pool, legacy liquidity, router_v3 liquidity, pool estimate view payloads, position amount view payload, swap coin/FA argument order, reward, and claim argument order | `payload_test.go`, `router_v3_payload_test.go`, `pool_payload_test.go`, `position_payload_test.go` |
 | Aptos view execution | REST `/v1/view` request conversion, API key header, status errors, client wiring, typed decoding errors, and service wrappers | `view_executor_test.go`, `view_services_test.go`, `typed_view_helpers_test.go` |
 | Live integration harness | Environment parsing, default skips, client option construction, Aptos view smoke, and guarded Hyperion REST smoke tests | `integration_helpers_test.go`, `integration_support_test.go`, `view_integration_test.go`, `integration_hyperion_test.go` |
@@ -96,7 +96,7 @@ availability, or upstream network conditions.
 | Swap quote methods: `EstFromAmount`, `EstToAmount`, `EstFromAmountTyped`, `EstToAmountTyped`, `EstimateAmountArgs` | Offline unit tests, typed decode tests, and parity REST fixtures; opt-in live quote smoke when token env is supplied | `modules_test.go`, `rest_types_test.go`, `parity_test.go`, `integration_hyperion_test.go` |
 | Swap payload builders: `SwapTransactionPayload`, `SwapWithPartnershipTransactionPayload` | Offline tests for FA-to-FA, coin-to-coin conversion, original pair selection, partnership behavior, and golden parity snapshots | `payload_test.go`, `parity_test.go` |
 | Aggregate route fetch: `EstAmountByAggregateSwap`, route/result structs, aggregate constants | Offline mainnet guard and parity route fixture; opt-in live aggregate route smoke on mainnet when token env is supplied | `aggregate_test.go`, `parity_test.go`, `integration_hyperion_test.go` |
-| Aggregate composer: `GenerateAggregateSwapTransactionScript`, `AggregateSwapComposer`, `AggregateSwapRecorder`, call argument/result types | Offline recorder tests for exact-in, exact-out refund, DEX adapter dispatch, composer errors, and mainnet guard | `aggregate_composer_test.go` |
+| Aggregate composer: `GenerateAggregateSwapTransactionScript`, `BuildAggregateSwapSubmitTransaction`, `AggregateSwapComposer`, `AggregateSwapRecorder`, `AggregateSwapSubmitAdapter`, call argument/result types | Offline recorder tests for exact-in, exact-out refund, DEX adapter dispatch, submit plan handoff, unsupported adapter errors, composer errors, and mainnet guard | `aggregate_composer_test.go`, `aggregate_submit_adapter_test.go` |
 | Utility functions and fee-tier constants | Offline tests for tick complement, pool deadline, slippage, currency validation, `LogBase`, price/tick conversion, tick rounding, fee-tier tables, and `U64Max` parity | `utils_test.go` |
 
 ## Golden Fixtures
@@ -114,7 +114,7 @@ ordering.
 | Area | Follow-up |
 | --- | --- |
 | Broader REST response structs | Expand typed wrappers when Hyperion publishes stable schemas for additional fields. |
-| Submit-ready aggregate composer adapters | Keep behind adapter-specific tests if a production Aptos SDK composer is added later. |
+| Native submit-ready aggregate adapter | Keep behind adapter-specific tests if upstream Aptos Go support gains a Dynamic Script Composer-compatible compiler. |
 
 ## Integration Tests
 

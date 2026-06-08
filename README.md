@@ -274,10 +274,12 @@ See [examples/005_view](examples/005_view/main.go). The example only executes wh
 provides an `AggregateSwapComposer` interface and a built-in
 `AggregateSwapRecorder`.
 
-The recorder mirrors the upstream TypeScript SDK's batched-call order for tests,
-audits, and future adapter development. It does not serialize submit-ready Aptos
-transaction bytes; a submit-ready aggregate transaction adapter remains a future
-extension.
+The recorder mirrors the upstream TypeScript SDK's batched-call order for tests
+and audits. It does not serialize submit-ready Aptos transaction bytes. For
+applications that provide their own TS/WASM bridge or future native Go composer,
+`BuildAggregateSwapSubmitTransaction` converts the route to a deterministic
+`AggregateSwapSubmitPlan` and delegates transaction construction to an
+`AggregateSwapSubmitAdapter`.
 
 ```go
 recorder := hyperion.NewAggregateSwapRecorder()
@@ -287,10 +289,25 @@ err := sdk.Swap.GenerateAggregateSwapTransactionScript(hyperion.GenerateAggregat
 })
 ```
 
+Current Aptos Go SDK releases can wrap compiled script bytecode, but they do not
+expose the TypeScript Dynamic Script Composer compiler that turns batched
+call/result references into Move script bytecode. Use
+`NewUnsupportedAggregateSwapSubmitAdapter` to make that gap explicit, or inject a
+real adapter when your application has one:
+
+```go
+_, err := sdk.Swap.BuildAggregateSwapSubmitTransaction(ctx, hyperion.BuildAggregateSwapSubmitTransactionArgs{
+	Route:   route,
+	Adapter: hyperion.NewUnsupportedAggregateSwapSubmitAdapter(),
+})
+```
+
 See [examples/006_aggregate_composer](examples/006_aggregate_composer/main.go).
 
 See [examples/008_live_aggregate_route_to_composer](examples/008_live_aggregate_route_to_composer/main.go)
-for the full route-fetch to recorder flow.
+for the full route-fetch to recorder flow. See
+[docs/aggregate-submit-adapter.md](docs/aggregate-submit-adapter.md) for adapter
+boundaries and current upstream limitations.
 
 ## Testing
 
@@ -318,8 +335,9 @@ Opt-in live smoke tests are documented in [docs/testing.md](docs/testing.md).
 - Hyperion contract ABI support and Hyperion UI support can differ; for example,
   `router_v3::add_liquidity_single` remains exposed by ABI even if a UI hides
   add zap-in flows.
-- Aggregate composer support records deterministic batched-call plans; a
-  submit-ready Aptos transaction adapter is a future extension.
+- Aggregate composer support records deterministic batched-call plans and can
+  pass them to an injected submit adapter; the built-in unsupported adapter
+  documents the current Aptos Go SDK Dynamic Script Composer gap.
 - Removed low-level GraphQL APIs from older TypeScript SDK versions are not
   recreated as first-class Go APIs.
 

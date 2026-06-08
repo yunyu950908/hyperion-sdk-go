@@ -14,7 +14,7 @@ import (
 // route and passes it to GenerateAggregateSwapTransactionScript with an
 // AggregateSwapRecorder.
 //
-// The recorder is useful for tests, audits, and future transaction-builder
+// The recorder is useful for tests, audits, and injected transaction-builder
 // adapters: it captures the ordered batched calls that a real Aptos composer
 // adapter would need to turn into a submit-ready transaction.
 func main() {
