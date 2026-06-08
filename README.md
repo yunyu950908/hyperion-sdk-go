@@ -75,6 +75,7 @@ The examples are numbered as a suggested learning path:
 | 007 | [examples/007_swap_payload_from_quote](examples/007_swap_payload_from_quote/main.go) | Build an unsigned normal swap payload from a live quote path |
 | 008 | [examples/008_live_aggregate_route_to_composer](examples/008_live_aggregate_route_to_composer/main.go) | Convert a live aggregate route into an offline composer call plan |
 | 009 | [examples/009_position_liquidity_payloads](examples/009_position_liquidity_payloads/main.go) | Build position and liquidity payloads without submitting transactions |
+| 010 | [examples/010_aggregate_plan_handoff](examples/010_aggregate_plan_handoff/main.go) | Build an aggregate submit plan handoff for wallet-layer composers |
 
 ## Initialization
 
@@ -315,8 +316,12 @@ See [examples/006_aggregate_composer](examples/006_aggregate_composer/main.go).
 
 See [examples/008_live_aggregate_route_to_composer](examples/008_live_aggregate_route_to_composer/main.go)
 for the full route-fetch to recorder flow. See
+[examples/010_aggregate_plan_handoff](examples/010_aggregate_plan_handoff/main.go)
+for the route-fetch to submit-plan handoff flow. See
 [docs/aggregate-submit-adapter.md](docs/aggregate-submit-adapter.md) for adapter
-boundaries and current upstream limitations.
+boundaries and current upstream limitations, and
+[docs/wallet-integration.md](docs/wallet-integration.md) for wallet-layer
+handoff guidance.
 
 ## Testing
 
@@ -358,4 +363,5 @@ Opt-in live smoke tests are documented in [docs/testing.md](docs/testing.md).
 
 - [Migration notes](docs/migration.md)
 - [Design notes](docs/design.md)
+- [Wallet integration guide](docs/wallet-integration.md)
 - [Testing matrix](docs/testing.md)
