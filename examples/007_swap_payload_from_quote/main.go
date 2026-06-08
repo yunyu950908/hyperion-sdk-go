@@ -53,7 +53,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	quote, err := sdk.Swap.EstFromAmount(context.Background(), hyperion.EstimateAmountArgs{
+	quote, err := sdk.Swap.EstFromAmountTyped(context.Background(), hyperion.EstimateAmountArgs{
 		Amount:   amount,
 		From:     from,
 		To:       to,
@@ -63,13 +63,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	path, err := stringSliceField(quote, "path")
-	if err != nil {
-		log.Fatal(err)
+	path := quote.Path
+	if len(path) == 0 {
+		log.Fatal("quote did not include a pool path; use a direct Hyperion route quote before building a normal swap payload")
 	}
-	amountOut, err := stringField(quote, "amountOut")
-	if err != nil {
-		log.Fatal(err)
+	amountOut := quote.ResolvedAmountOut()
+	if amountOut == "" {
+		log.Fatal("quote did not include amountOut/outputAmount")
 	}
 
 	payload, err := sdk.Swap.SwapTransactionPayload(hyperion.SwapTransactionPayloadArgs{
@@ -86,9 +86,9 @@ func main() {
 	}
 
 	fmt.Printf("quote amountIn=%s amountOut=%s fee=%s path pools=%d\n",
-		stringFieldOrEmpty(quote, "amountIn"),
+		quote.ResolvedAmountIn(),
 		amountOut,
-		stringFieldOrEmpty(quote, "fee"),
+		firstNonEmpty(quote.Fee, quote.FeeAmount),
 		len(path),
 	)
 	fmt.Println("swap payload, ready for wallet/Aptos transaction signing:")
@@ -103,47 +103,13 @@ func getenvDefault(name, fallback string) string {
 	return value
 }
 
-func stringField(values map[string]any, key string) (string, error) {
-	value, ok := values[key]
-	if !ok {
-		return "", fmt.Errorf("quote missing %q", key)
-	}
-	text, ok := value.(string)
-	if !ok || text == "" {
-		return "", fmt.Errorf("quote field %q = %#v, want non-empty string", key, value)
-	}
-	return text, nil
-}
-
-func stringFieldOrEmpty(values map[string]any, key string) string {
-	value, err := stringField(values, key)
-	if err != nil {
-		return ""
-	}
-	return value
-}
-
-func stringSliceField(values map[string]any, key string) ([]string, error) {
-	value, ok := values[key]
-	if !ok {
-		return nil, fmt.Errorf("quote missing %q", key)
-	}
-	items, ok := value.([]any)
-	if !ok {
-		return nil, fmt.Errorf("quote field %q = %#v, want array", key, value)
-	}
-	out := make([]string, 0, len(items))
-	for _, item := range items {
-		text, ok := item.(string)
-		if !ok || text == "" {
-			return nil, fmt.Errorf("quote path item = %#v, want non-empty string", item)
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if value != "" {
+			return value
 		}
-		out = append(out, text)
 	}
-	if len(out) == 0 {
-		return nil, fmt.Errorf("quote field %q is empty", key)
-	}
-	return out, nil
+	return ""
 }
 
 func printJSON(value any) {
