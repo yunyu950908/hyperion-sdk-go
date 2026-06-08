@@ -14,6 +14,7 @@ payload construction, aggregate routes, and position operations.
 | 007 | [007_swap_payload_from_quote](007_swap_payload_from_quote/main.go) | Build an unsigned normal swap payload from a live quote path |
 | 008 | [008_live_aggregate_route_to_composer](008_live_aggregate_route_to_composer/main.go) | Convert a live aggregate route into an offline composer call plan |
 | 009 | [009_position_liquidity_payloads](009_position_liquidity_payloads/main.go) | Build position and liquidity payloads without submitting transactions |
+| 010 | [010_aggregate_plan_handoff](010_aggregate_plan_handoff/main.go) | Build an aggregate submit plan handoff for wallet-layer composers |
 
 Run an example with:
 
