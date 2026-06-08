@@ -275,17 +275,26 @@ provides an `AggregateSwapComposer` interface and a built-in
 `AggregateSwapRecorder`.
 
 The recorder mirrors the upstream TypeScript SDK's batched-call order for tests
-and audits. It does not serialize submit-ready Aptos transaction bytes. For
-applications that provide their own TS/WASM bridge or future native Go composer,
-`BuildAggregateSwapSubmitTransaction` converts the route to a deterministic
-`AggregateSwapSubmitPlan` and delegates transaction construction to an
-`AggregateSwapSubmitAdapter`.
+and audits. It does not serialize submit-ready Aptos transaction bytes.
+`BuildAggregateSwapSubmitPlan` returns the same deterministic
+`AggregateSwapSubmitPlan` directly, so wallet-facing applications can hand the
+plan to their own transaction composer without pretending the plan is a wallet
+payload. For applications that provide their own TS/WASM bridge or future native
+Go composer, `BuildAggregateSwapSubmitTransaction` delegates transaction
+construction to an `AggregateSwapSubmitAdapter`.
 
 ```go
 recorder := hyperion.NewAggregateSwapRecorder()
 err := sdk.Swap.GenerateAggregateSwapTransactionScript(hyperion.GenerateAggregateSwapTransactionScriptArgs{
 	Route:    route,
 	Composer: recorder,
+})
+```
+
+```go
+plan, err := sdk.Swap.BuildAggregateSwapSubmitPlan(hyperion.BuildAggregateSwapSubmitPlanArgs{
+	Route:         route,
+	PartnershipID: "partner-id",
 })
 ```
 
@@ -335,9 +344,10 @@ Opt-in live smoke tests are documented in [docs/testing.md](docs/testing.md).
 - Hyperion contract ABI support and Hyperion UI support can differ; for example,
   `router_v3::add_liquidity_single` remains exposed by ABI even if a UI hides
   add zap-in flows.
-- Aggregate composer support records deterministic batched-call plans and can
-  pass them to an injected submit adapter; the built-in unsupported adapter
-  documents the current Aptos Go SDK Dynamic Script Composer gap.
+- Aggregate composer support records deterministic batched-call plans, exposes
+  them for wallet-layer handoff, and can pass them to an injected submit adapter;
+  the built-in unsupported adapter documents the current Aptos Go SDK Dynamic
+  Script Composer gap.
 - Numeric public API fields intentionally stay as strings for chain-facing
   integer values; see [docs/numeric-helpers.md](docs/numeric-helpers.md) for the
   current `apd/v3` decision.

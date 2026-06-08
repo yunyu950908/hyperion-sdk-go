@@ -49,7 +49,8 @@ requirement explicitly asks for them.
 - Aggregate swap route fetching is part of the core SDK. Aggregate transaction
   composition uses an `AggregateSwapComposer` interface plus
   `AggregateSwapRecorder` to mirror TypeScript batched-call planning without
-  requiring a specific Aptos Go transaction builder. Submit-ready aggregate
+  requiring a specific Aptos Go transaction builder. `BuildAggregateSwapSubmitPlan`
+  exposes that plan directly for wallet-layer handoff. Submit-ready aggregate
   construction is delegated to an injected `AggregateSwapSubmitAdapter`; the
   built-in unsupported adapter documents the current lack of a Go Dynamic Script
   Composer compiler.

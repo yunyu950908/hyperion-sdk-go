@@ -44,6 +44,25 @@ The SDK first composes the route through `AggregateSwapRecorder`, then passes an
 The adapter returns `AggregateSwapSubmitTransaction`, which can carry BCS bytes,
 a signing message, or an adapter-specific transaction object through `Raw`.
 
+## Read-Only Plan Handoff
+
+Use `BuildAggregateSwapSubmitPlan` when an application wants to hand aggregate
+swap instructions to its own wallet interaction layer without implementing the
+adapter interface inside this SDK:
+
+```go
+plan, err := sdk.Swap.BuildAggregateSwapSubmitPlan(hyperion.BuildAggregateSwapSubmitPlanArgs{
+	Route:         route,
+	PartnershipID: "partner-id",
+})
+```
+
+The returned `AggregateSwapSubmitPlan` is isolated from the original route:
+mutating the plan does not mutate the route passed into the SDK. It is still only
+a composer plan. A wallet cannot sign or submit it until an external transaction
+composer turns the calls and result references into a real Aptos transaction
+payload, script payload, BCS bytes, or signing message.
+
 ## Unsupported Adapter
 
 Use the unsupported adapter to make the boundary explicit in tests or production

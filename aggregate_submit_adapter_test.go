@@ -10,6 +10,38 @@ import (
 	"testing"
 )
 
+func TestBuildAggregateSwapSubmitPlanReturnsComposerPlan(t *testing.T) {
+	t.Parallel()
+
+	sdk := newMainnetClientForPayloads(t)
+	route := aggregateComposerRouteWithAllDEXAdapters()
+
+	plan, err := sdk.Swap.BuildAggregateSwapSubmitPlan(BuildAggregateSwapSubmitPlanArgs{
+		Route:         route,
+		PartnershipID: "partner-override",
+	})
+	if err != nil {
+		t.Fatalf("BuildAggregateSwapSubmitPlan returned error: %v", err)
+	}
+
+	if plan.PartnershipID != "partner-override" || plan.RouteSplits != 1 || plan.RefundRouteSplits != 0 {
+		t.Fatalf("submit plan metadata = %#v", plan)
+	}
+	if len(plan.Calls) != 29 {
+		t.Fatalf("submit plan calls = %d", len(plan.Calls))
+	}
+
+	findRecordedCall(t, plan.Calls, MainnetContractAddress+"::partnership::swap")
+	findRecordedCall(t, plan.Calls, cellanaContract+"::router::swap")
+	findRecordedCall(t, plan.Calls, thalaSwapV2Contract+"::pool::swap_exact_in_weighted")
+	findRecordedCall(t, plan.Calls, AggregateToolContractAddress+"::tool::swap_in_emoji")
+
+	plan.Route.Quotes.Route[0].RouteTaken[0].DexName = "Mutated"
+	if route.Quotes.Route[0].RouteTaken[0].DexName != "Hyperion" {
+		t.Fatal("submit plan mutation changed caller route")
+	}
+}
+
 func TestBuildAggregateSwapSubmitTransactionPassesComposerPlanToAdapter(t *testing.T) {
 	t.Parallel()
 

@@ -25,6 +25,14 @@ type BuildAggregateSwapSubmitTransactionArgs struct {
 	Adapter       AggregateSwapSubmitAdapter
 }
 
+// BuildAggregateSwapSubmitPlanArgs configures read-only aggregate submit plan
+// generation. The returned plan is not a wallet payload; callers still need a
+// transaction composer before a wallet can sign or submit an aggregate swap.
+type BuildAggregateSwapSubmitPlanArgs struct {
+	Route         AggregateSwapInfoResult
+	PartnershipID string
+}
+
 // AggregateSwapSubmitAdapter converts a deterministic aggregate call plan into
 // adapter-specific submit-ready transaction data.
 type AggregateSwapSubmitAdapter interface {
@@ -104,13 +112,34 @@ func (s *SwapService) BuildAggregateSwapSubmitTransaction(ctx context.Context, a
 		return nil, errors.New("aggregate submit adapter is required")
 	}
 
+	plan, err := s.BuildAggregateSwapSubmitPlan(BuildAggregateSwapSubmitPlanArgs{
+		Route:         args.Route,
+		PartnershipID: args.PartnershipID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	result, err := args.Adapter.BuildAggregateSwapSubmitTransaction(ctx, plan)
+	if err != nil {
+		return nil, err
+	}
+	if result == nil {
+		return nil, errors.New("aggregate submit adapter returned nil transaction")
+	}
+	return result, nil
+}
+
+// BuildAggregateSwapSubmitPlan composes an aggregate route into a deterministic,
+// read-only call plan. The plan is useful for audits, UI handoff, or external
+// wallet/composer integrations, but it is not a submit-ready Aptos transaction.
+func (s *SwapService) BuildAggregateSwapSubmitPlan(args BuildAggregateSwapSubmitPlanArgs) (AggregateSwapSubmitPlan, error) {
 	recorder := NewAggregateSwapRecorder()
 	if err := s.GenerateAggregateSwapTransactionScript(GenerateAggregateSwapTransactionScriptArgs{
 		Route:         args.Route,
 		Composer:      recorder,
 		PartnershipID: args.PartnershipID,
 	}); err != nil {
-		return nil, err
+		return AggregateSwapSubmitPlan{}, err
 	}
 
 	plan := AggregateSwapSubmitPlan{
@@ -121,14 +150,7 @@ func (s *SwapService) BuildAggregateSwapSubmitTransaction(ctx context.Context, a
 		RefundRouteSplits: len(args.Route.Quotes.RefundRoute),
 		Calls:             cloneAggregateSwapComposerCalls(recorder.Calls),
 	}
-	result, err := args.Adapter.BuildAggregateSwapSubmitTransaction(ctx, plan)
-	if err != nil {
-		return nil, err
-	}
-	if result == nil {
-		return nil, errors.New("aggregate submit adapter returned nil transaction")
-	}
-	return result, nil
+	return plan, nil
 }
 
 func cloneAggregateSwapComposerCalls(calls []AggregateSwapComposerCall) []AggregateSwapComposerCall {
