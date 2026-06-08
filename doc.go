@@ -14,8 +14,9 @@
 // Live Aptos view calls are available through Client.View, service convenience
 // methods, and the ViewExecutor interface. The built-in AptosViewExecutor posts
 // to an Aptos fullnode REST endpoint. Aggregate swap composition uses an
-// AggregateSwapComposer interface and the deterministic AggregateSwapRecorder;
-// the recorder does not serialize submit-ready transaction bytes.
+// AggregateSwapComposer interface, the deterministic AggregateSwapRecorder, and
+// an AggregateSwapSubmitAdapter boundary; the built-in unsupported adapter
+// documents the current Go Dynamic Script Composer gap.
 //
 // See README.md, docs/migration.md, docs/design.md, and docs/testing.md in the
 // repository for usage examples, migration notes, design boundaries, and

@@ -15,7 +15,7 @@ This document summarizes how the audited TypeScript SDK surface maps to
 | Dynamic REST objects | `JSONMap` plus typed wrappers | Existing REST methods keep flexible `JSONMap` returns; additive `*Typed` methods decode selected stable fields. |
 | Entry-function payload builders | `EntryFunctionPayload` and typed args structs | Builders are deterministic and offline. |
 | Aptos view calls | `Client.View` and `ViewExecutor` | Users can use the built-in REST executor or inject their own implementation. |
-| Aggregate swap helper | `EstAmountByAggregateSwap` plus `AggregateSwapComposer` | Route fetching is supported; submit-ready transaction serialization is an adapter concern. |
+| Aggregate swap helper | `EstAmountByAggregateSwap` plus `AggregateSwapComposer` / `AggregateSwapSubmitAdapter` | Route fetching and deterministic call plans are supported; submit-ready transaction serialization is delegated to an injected adapter. |
 
 ## Intentional Differences
 
@@ -67,8 +67,15 @@ coin type to fungible-asset metadata conversion:
 
 The TypeScript SDK uses an Aptos script-composer dependency. The Go SDK exposes
 an `AggregateSwapComposer` interface and a deterministic `AggregateSwapRecorder`
-so callers can inspect or adapt the batched-call plan. The recorder does not
-produce submit-ready transaction bytes.
+so callers can inspect or adapt the batched-call plan. `BuildAggregateSwapSubmitTransaction`
+turns the same plan into an `AggregateSwapSubmitPlan` and delegates transaction
+construction to an injected `AggregateSwapSubmitAdapter`.
+
+Current Aptos Go SDK releases can build script transactions when compiled
+bytecode is already available, but they do not expose the TypeScript Dynamic
+Script Composer compiler needed to turn batched call/result references into
+Move script bytecode. The built-in unsupported adapter returns
+`ErrAggregateSubmitAdapterUnsupported` for that gap.
 
 ### GraphQL
 
@@ -89,6 +96,6 @@ Live integration smoke tests are opt-in and documented in
 
 ## Future Extensions
 
-- add a submit-ready aggregate composer adapter if a production Aptos Go
-  transaction builder integration is required
+- add a native submit-ready aggregate adapter if upstream Aptos Go support gains
+  a Dynamic Script Composer-compatible compiler
 - expand typed REST wrappers if Hyperion publishes broader stable schemas

@@ -29,7 +29,7 @@ requirement explicitly asks for them.
 | `src/modules/rewardModule.ts` | `RewardService` | Reward history, pending reward view payload, claim payloads, and pending reward view execution are ported. |
 | `src/modules/swapModule.ts` | `SwapService` | Quote methods, basic payloads, swap coin-type to FA metadata conversion, aggregate route fetch, and aggregate composer recorder strategy are ported. |
 | `src/utils/index.ts` | shared utility functions/constants | Tick complement, fee tier config, slippage helpers, price/tick conversion, and pool deadline helpers are implemented. |
-| `src/helper/aggregateSwap/*` | aggregate route types/helper | Route fetch and composer call planning are ported through a Go composer interface and deterministic recorder. Submit-ready transaction serialization remains an adapter concern. |
+| `src/helper/aggregateSwap/*` | aggregate route types/helper | Route fetch and composer call planning are ported through a Go composer interface, deterministic recorder, and submit adapter boundary. Current upstream Go SDK gaps are exposed through an unsupported adapter. |
 
 ## Go API Principles
 
@@ -46,7 +46,10 @@ requirement explicitly asks for them.
 - Aggregate swap route fetching is part of the core SDK. Aggregate transaction
   composition uses an `AggregateSwapComposer` interface plus
   `AggregateSwapRecorder` to mirror TypeScript batched-call planning without
-  requiring a specific Aptos Go transaction builder.
+  requiring a specific Aptos Go transaction builder. Submit-ready aggregate
+  construction is delegated to an injected `AggregateSwapSubmitAdapter`; the
+  built-in unsupported adapter documents the current lack of a Go Dynamic Script
+  Composer compiler.
 - Aptos view execution uses an interface-first boundary. `EntryFunctionPayload`
   keeps the upstream TypeScript SDK field names for offline parity, while the
   built-in REST executor converts to Aptos fullnode `/v1/view` request fields.
@@ -89,9 +92,9 @@ parity checks, signing flows, and custom executor adapters.
 
 ## Future Extensions
 
-- Add a submit-ready Aptos Go SDK adapter for `AggregateSwapComposer` if a
-  production integration requires direct transaction serialization. The current
-  recorder is intentionally deterministic and offline.
+- Add a native submit-ready Aptos Go SDK adapter if upstream Go support gains a
+  Dynamic Script Composer-compatible compiler. The current recorder and submit
+  adapter boundary are intentionally deterministic and offline.
 - Basic swap payloads emulate `aptos-tool` token-pair selection and
   `Token.faTypeCalculate()`: `address::module::name` values are treated as coin
   types, APT maps to `0xa`, and other coin types derive FA metadata with Aptos
